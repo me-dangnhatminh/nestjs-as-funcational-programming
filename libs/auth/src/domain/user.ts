@@ -45,6 +45,8 @@ export type User = {
   removedAt?: Date;
 };
 
+// map user to plain object
+
 // ============================================= //
 // ============== Implementation ============== //
 
