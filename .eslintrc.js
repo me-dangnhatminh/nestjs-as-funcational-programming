@@ -17,6 +17,9 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {
+    'jsdoc/valid-types': 'error',
+    'prettier/prettier': 'error',
+    // '@typescript-eslint/no-namespace': 'off', // should't use namespace
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
