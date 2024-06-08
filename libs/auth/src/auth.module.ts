@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { APP_PIPE } from '@nestjs/core';
+
+import { JoiValidationPipe } from './infra';
 
 @Module({
   imports: [
@@ -8,5 +11,6 @@ import { JwtModule } from '@nestjs/jwt';
       signOptions: { expiresIn: '60s' },
     }),
   ],
+  providers: [{ provide: APP_PIPE, useClass: JoiValidationPipe }],
 })
 export class AuthModule {}

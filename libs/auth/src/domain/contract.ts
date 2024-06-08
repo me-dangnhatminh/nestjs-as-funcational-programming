@@ -1,14 +1,13 @@
 import User, { EmailAddress, HashedPassword, RawPassword } from './user';
-import * as RxJs from 'rxjs';
 
 export abstract class IUserRepository {
   abstract findByEmail(
     email: EmailAddress,
-  ): RxJs.Observable<(User & { email: EmailAddress }) | null>;
-  abstract findById(id: string): RxJs.Observable<User | null>;
-  abstract add(user: User): RxJs.Observable<void>;
-  abstract update(user: User): RxJs.Observable<void>;
-  abstract remove(user: User): RxJs.Observable<void>;
+  ): Promise<(User & { email: EmailAddress }) | null>;
+  abstract findById(id: string): Promise<User | null>;
+  abstract add(user: User): Promise<void>;
+  abstract update(user: User): Promise<void>;
+  abstract remove(user: User): Promise<void>;
 }
 
 // ============================================= //
@@ -21,6 +20,17 @@ export type ComparePasswordSync = (
 export type GenAT = (user: { id: string }) => string;
 export type DecodeAT = (token: string) => { id: string };
 
-export type UploadAvatar<T> = (file: T) => RxJs.Observable<void>;
-export type DeleteAvatar<T> = (file: T) => RxJs.Observable<void>;
-export type GetAvatarUrl<T> = (file: T) => RxJs.Observable<string>;
+export abstract class IUserService {
+  abstract getUserByEmail(email: EmailAddress): Promise<User | null>;
+}
+
+export abstract class IAuthService {
+  abstract hashPassword: HashPasswordSync;
+  abstract comparePassword: ComparePasswordSync;
+  abstract genAccessToken: GenAT;
+  abstract decodeAccessToken: DecodeAT;
+}
+
+export type UploadAvatar<T> = (file: T) => Promise<void>;
+export type DeleteAvatar<T> = (file: T) => Promise<void>;
+export type GetAvatarUrl<T> = (file: T) => Promise<string>;

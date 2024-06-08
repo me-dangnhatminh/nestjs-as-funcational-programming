@@ -137,6 +137,7 @@ export const UserId = {
 } as const;
 
 export const EmailAddress = {
+  is: F.flow(parseEmail, E.isRight),
   parse: parseEmail,
   of: F.flow(parseEmail, E.getOrThrowWith(F.identity)),
 } as const;

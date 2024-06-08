@@ -1,14 +1,12 @@
-import { Either as E, Function as F, Effect as Eff } from 'effect';
-import * as RxJs from 'rxjs';
 import {
   EmailAddress,
   HashedPassword,
-  RawPassword,
+  IUserRepository,
   User,
   UserId,
 } from '../domain';
+import * as RxJs from 'rxjs';
 
-// this is command
 export type SignUpCommand = {
   id: UserId;
   email: EmailAddress;
@@ -16,19 +14,28 @@ export type SignUpCommand = {
   firstName?: string;
   lastName?: string;
   avatarUrl?: string;
+
+  createdAt?: Date;
 };
 
-export class SignUpHandler {
-  constructor() {}
+export class SignUpCommandHandler {
+  constructor(private readonly userRepo: IUserRepository) {}
 
-  handle(cmd: SignUpCommand): Eff.Effect<void> {
-    // return F.pipe(
-    //   this.validate(cmd),
-    //   E.chain(this.validateEmailExists),
-    //   E.map(this.hashPassword),
-    //   E.map(toUser),
-    //   E.chain(this.persist),
-    // );
+  execute(command: SignUpCommand) {
+    const now = new Date();
+    const user = User.of({
+      id: command.id,
+      provider: 'local',
+      email: command.email,
+      password: command.password,
+      createdAt: command.createdAt ?? now,
+      // firstName: command.firstName,
+      // lastName: command.lastName,
+      // avatarUrl: command.avatarUrl,
+    });
+
+    const persist = RxJs.mergeMap(this.userRepo.add);
+    return RxJs.of(user).pipe(persist);
   }
 }
 
