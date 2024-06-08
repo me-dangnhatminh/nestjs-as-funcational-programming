@@ -1,78 +1,84 @@
-import { IAuthService, IUserRepository } from '@app/auth/domain';
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  EmailAddress,
+  IAuthService,
+  IUserRepository,
+  RawPassword,
+  User,
+  UserId,
+} from '@app/auth/domain';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 
 import { SignUpBody } from './view-models';
+import { ValidationUnusedEmail } from '../validators';
+import { v4 as uuid } from 'uuid';
+import * as RxJs from 'rxjs';
+import { Response } from 'express';
+
+const AuthHelper = {
+  addTokenToResponse: (res: Response, token: string) => {
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+  },
+};
+
+function hashPassword<T extends { password: RawPassword }>(
+  authSer: IAuthService,
+) {
+  return (body: T) =>
+    authSer
+      .hashPassword(body.password)
+      .then((password) => ({ ...body, password }));
+}
+
+function validateUnusedEmail<T extends { email: EmailAddress }>(
+  isUnusedEmail: ValidationUnusedEmail,
+) {
+  return (body: T) => isUnusedEmail.transform(body.email);
+}
+
+function setTokenToResponse<T extends { id: string }>(
+  res: Response,
+  authSer: IAuthService,
+) {
+  return (user: T) =>
+    authSer
+      .genAT(user)
+      .then((token) => AuthHelper.addTokenToResponse(res, token));
+}
 
 @Controller('auth')
 export class AuthController {
   constructor(
+    private readonly isUnusedEmail: ValidationUnusedEmail,
     private readonly authSer: IAuthService,
     private readonly userRepo: IUserRepository,
   ) {}
 
   @Post('email/sign-up')
-  async signUp(@Body() body: SignUpBody) {
-    // const workflow = RxJs.of(cmd).pipe(
-    //   RxJs.switchMap(ValidateEmailExists(this.userRepo)),
-    //   RxJs.map(E.getOrThrowWith(F.identity)),
-    //   RxJs.map(HashPassword),
-    //   RxJs.map(toUser),
-    //   RxJs.switchMap(this.userRepo.add),
-    // );
-    // return RxJs.firstValueFrom(workflow);
+  async signUp(
+    @Body() body: SignUpBody,
+    @Res({ passthrough: true })
+    res: Response,
+  ) {
+    const workflow = RxJs.of(body).pipe(
+      RxJs.tap(validateUnusedEmail(this.isUnusedEmail)),
+      RxJs.concatMap(hashPassword(this.authSer)),
+      RxJs.map((cmd) =>
+        User.of({
+          id: UserId.of(uuid()),
+          provider: 'local',
+          email: cmd.email,
+          password: cmd.password,
+          createdAt: new Date(),
+        }),
+      ),
+      RxJs.tap(this.userRepo.add),
+    );
+
+    workflow.pipe(RxJs.tap(setTokenToResponse(res, this.authSer))); // handle infa layer
+
+    return workflow.toPromise();
   }
 }
-
-// type SignUpBody = { email: string; password: string };
-// type ValidInput = { id: UserId; email: EmailAddress; password: RawPassword };
-// type InputWithHashed = Omit<ValidInput, 'password'> & {
-//   password: HashedPassword;
-// };
-
-// type ValidateInput = (
-//   input: SignUpBody,
-// ) => E.Either<ValidInput, BadRequestException>;
-
-// type ValidateEmailExists = (
-//   input: ValidInput,
-// ) => RxJs.Observable<E.Either<ValidInput, ConflictException>>;
-
-// type HashPassword = (
-//   input: ValidInput,
-// ) => Omit<ValidInput, 'password'> & { password: HashedPassword };
-
-// const EmailAreadyExists = (email: string) =>
-//   new ConflictException(`Email ${email} already exists`);
-
-// const ValidateInput: E.Either<unknown, BadRequestException> = (input) =>
-//   F.pipe(
-//     E.Do,
-//     E.bind('id', () => UserId.parse(uuid())),
-//     E.bind('email', () => EmailAddress.parse(input.email)),
-//     E.bind('password', () => RawPassword.parse(input.password)),
-//     E.mapLeft((error) => new BadRequestException(error.message)),
-//   );
-
-// const ValidateEmailExists =
-//   (userRepo: IUserRepository): ValidateEmailExists =>
-//   (input) =>
-//     userRepo
-//       .findByEmail(input.email)
-//       .pipe(
-//         RxJs.map((user) =>
-//           user ? E.left(EmailAreadyExists(input.email)) : E.right(input),
-//         ),
-//       );
-
-// const ValidateEmailNotUsed =
-//   (userSer: IUserService) =>
-//   async (
-//     email: EmailAddress,
-//   ): Promise<E.Either<EmailAddress, ConflictException>> => {
-//     const user = await userSer.getUserByEmail(email);
-//     user
-//       ? E.left(new ConflictException(`Email ${email} already exists`))
-//       : E.right(email);
-//   };
-
-//use pipe in nestjs to validate email not used

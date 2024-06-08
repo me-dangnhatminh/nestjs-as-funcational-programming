@@ -12,6 +12,7 @@ export abstract class IUserRepository {
 
 // ============================================= //
 // ============== Domain Services ============== //
+export type HashPassword = (password: RawPassword) => Promise<HashedPassword>;
 export type HashPasswordSync = (password: RawPassword) => HashedPassword;
 export type ComparePasswordSync = (
   pass: RawPassword,
@@ -25,9 +26,9 @@ export abstract class IUserService {
 }
 
 export abstract class IAuthService {
-  abstract hashPassword: HashPasswordSync;
+  abstract hashPassword: HashPassword;
   abstract comparePassword: ComparePasswordSync;
-  abstract genAccessToken: GenAT;
+  abstract genAT(user: { id: string }): Promise<string>;
   abstract decodeAccessToken: DecodeAT;
 }
 
