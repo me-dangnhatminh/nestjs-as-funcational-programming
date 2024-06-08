@@ -1,35 +1,30 @@
-import {
-  ComparePasswordSync,
-  DecodeAT,
-  GenAT,
-  HashedPassword,
-  HashPasswordSync,
-  IAuthService,
-  RawPassword,
-} from '@app/auth/domain';
+import { HashedPassword, RawPassword } from '@app/auth/domain';
 import { compareSync, hashSync, genSaltSync } from 'bcrypt';
 
 // for common use
 
-export class AuthService implements IAuthService {
+export class AuthService {
   constructor() {}
-  genUUID: () => string = () => {
-    throw new Error('Method not implemented.');
-  };
-  hashPassword: HashPasswordSync = (password: RawPassword) => {
-    return hashSync(password, genSaltSync(10)) as HashedPassword;
-  };
-  comparePassword: ComparePasswordSync = (
+
+  async hashPassword<T extends { password: RawPassword }>(
+    data: T,
+  ): Promise<HashedPassword> {
+    const hashed = hashSync(data.password, genSaltSync(10));
+    return hashed as HashedPassword;
+  }
+
+  async comparePassword(
     pass: RawPassword,
     hash: HashedPassword,
-  ) => {
+  ): Promise<boolean> {
     return compareSync(pass, hash);
-  };
-  genAccessToken: GenAT = () => {
-    throw new Error('Method not implemented.');
-  };
+  }
 
-  decodeAccessToken: DecodeAT = () => {
-    throw new Error('Method not implemented.');
-  };
+  async genAT<T extends { id: string }>(data: T): Promise<string> {
+    return data.id;
+  }
+
+  async decodeAT(token: string): Promise<{ id: string }> {
+    return { id: token };
+  }
 }

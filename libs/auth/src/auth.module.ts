@@ -3,8 +3,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { APP_PIPE } from '@nestjs/core';
 
 import { JoiValidationPipe } from './infra';
+import { AuthController } from './infra/controllers/auth.controller';
 
 @Module({
+  controllers: [AuthController],
   imports: [
     JwtModule.register({
       secret: 'secretKey', // TODO: move to env

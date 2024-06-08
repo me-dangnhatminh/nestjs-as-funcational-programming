@@ -1,15 +1,16 @@
 import {
   EmailAddress,
+  HashedPassword,
   IAuthService,
   IUserRepository,
+  IUserService,
   RawPassword,
   User,
   UserId,
 } from '@app/auth/domain';
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, ConflictException, Controller, Post, Res } from '@nestjs/common';
 
 import { SignUpBody } from './view-models';
-import { ValidationUnusedEmail } from '../validators';
 import { v4 as uuid } from 'uuid';
 import * as RxJs from 'rxjs';
 import { Response } from 'express';
@@ -26,16 +27,22 @@ const AuthHelper = {
 function hashPassword<T extends { password: RawPassword }>(
   authSer: IAuthService,
 ) {
-  return (body: T) =>
+  return (
+    dto: T,
+  ): Promise<Omit<T, 'password'> & { password: HashedPassword }> =>
     authSer
-      .hashPassword(body.password)
-      .then((password) => ({ ...body, password }));
+      .hashPassword(dto.password)
+      .then((password) => ({ ...dto, password }));
 }
 
 function validateUnusedEmail<T extends { email: EmailAddress }>(
-  isUnusedEmail: ValidationUnusedEmail,
+  userService: IUserService,
 ) {
-  return (body: T) => isUnusedEmail.transform(body.email);
+  return (dto: T) =>
+    userService.getUserByEmail(dto.email).then((user) => {
+      if (user)
+        throw new ConflictException(`Email ${dto.email} already exists`);
+    });
 }
 
 function setTokenToResponse<T extends { id: string }>(
@@ -51,8 +58,8 @@ function setTokenToResponse<T extends { id: string }>(
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly isUnusedEmail: ValidationUnusedEmail,
     private readonly authSer: IAuthService,
+    private readonly userSer: IUserService,
     private readonly userRepo: IUserRepository,
   ) {}
 
@@ -63,7 +70,7 @@ export class AuthController {
     res: Response,
   ) {
     const workflow = RxJs.of(body).pipe(
-      RxJs.tap(validateUnusedEmail(this.isUnusedEmail)),
+      RxJs.tap(validateUnusedEmail(this.userSer)),
       RxJs.concatMap(hashPassword(this.authSer)),
       RxJs.map((cmd) =>
         User.of({
@@ -74,10 +81,14 @@ export class AuthController {
           createdAt: new Date(),
         }),
       ),
-      RxJs.tap(this.userRepo.add),
-    );
 
-    workflow.pipe(RxJs.tap(setTokenToResponse(res, this.authSer))); // handle infa layer
+      RxJs.tap(this.userRepo.add),
+
+      // infa layer
+      RxJs.tap(setTokenToResponse(res, this.authSer)), // set token to cookie
+      // set location header
+      RxJs.map(() => ({ message: 'Sign up successfully' })),
+    );
 
     return workflow.toPromise();
   }
