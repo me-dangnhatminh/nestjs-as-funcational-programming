@@ -1,4 +1,5 @@
-import { PipeTransform, BadRequestException } from '@nestjs/common';
+import { PipeTransform, BadRequestException, Provider } from '@nestjs/common';
+import { APP_PIPE } from '@nestjs/core';
 import * as Joi from 'joi';
 
 export class JoiValidationPipe implements PipeTransform {
@@ -10,3 +11,7 @@ export class JoiValidationPipe implements PipeTransform {
     return result.value;
   }
 }
+export const joiValidationPipe: Provider = {
+  provide: APP_PIPE,
+  useValue: JoiValidationPipe,
+};

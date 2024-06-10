@@ -77,6 +77,7 @@ export const UserSchema = Joi.object<User>({
   updatedAt: Joi.date(),
   removedAt: Joi.date(),
 });
+export const HashedPasswordSchema = Joi.string<HashedPassword>();
 
 // export const InvalidEmailAddress = (value: string): InvaidEmailAddress =>
 //   `${value} is not a valid email address`;
