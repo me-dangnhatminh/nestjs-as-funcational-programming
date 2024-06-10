@@ -14,7 +14,12 @@ class UserRepository implements IUserRepository {
     throw new Error('Method not implemented.');
   }
   add(user: User): Promise<void> {
-    throw new Error('Method not implemented.');
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('User added:', user);
+        resolve();
+      }, 5000);
+    });
   }
   update(user: User): Promise<void> {
     throw new Error('Method not implemented.');

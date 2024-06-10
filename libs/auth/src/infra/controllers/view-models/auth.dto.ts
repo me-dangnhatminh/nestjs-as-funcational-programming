@@ -1,13 +1,18 @@
 import {
   EmailAddress,
+  RawPassword,
   EmailSchema,
-  HashedPassword,
-  HashedPasswordSchema,
+  RawPasswordSchema,
 } from '@app/auth/domain';
+
 import * as Joi from 'joi';
 
-export type SignUpBody = { email: EmailAddress; password: HashedPassword };
-export const SignUpBody = Joi.object<SignUpBody>({
+export type SignUpDTO = {
+  email: EmailAddress;
+  password: RawPassword;
+};
+
+export const SignUpDTO = Joi.object<SignUpDTO, true>({
   email: EmailSchema.required(),
-  password: HashedPasswordSchema.required(),
-});
+  password: RawPasswordSchema.required(),
+}).options({ abortEarly: false });

@@ -1,43 +1,43 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
-  EmailAddress,
   HashedPassword,
   IUserRepository,
-  RawPassword,
   User,
   UserId,
 } from '@app/auth/domain';
 import {
   Body,
-  ConflictException,
   Controller,
   HttpCode,
   HttpStatus,
   Post,
   Res,
-  UsePipes,
 } from '@nestjs/common';
+import { Response } from 'express';
 
-import { SignUpBody } from './view-models';
+import { SignUpDTO } from './view-models';
 import { v4 as uuid } from 'uuid';
 import * as RxJs from 'rxjs';
-
-import { CryptoService, JwtService } from '../adapters';
-import { HashPasswordPipe, ValidationUnusedEmail } from '../pipes';
+import { HashPasswordPipe, useJoiPipe } from '../pipes';
+import { JwtService } from '../adapters';
+import AuthHelper from '../helpers/auth.helper';
+import { Function as F } from 'effect';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly userRepo: IUserRepository,
-    private readonly jwtSer: JwtService,
-    private readonly cryptoSer: CryptoService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post('email/sign-up')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @UsePipes(ValidationUnusedEmail, HashPasswordPipe)
-  signUp(@Body() body: SignUpBody) {
-    const handle = RxJs.of(body).pipe(
+  @HttpCode(HttpStatus.CREATED)
+  signUp(
+    @Body(useJoiPipe(SignUpDTO), HashPasswordPipe)
+    body: SignUpDTO & { password: HashedPassword },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const cmd = RxJs.of(body).pipe(
       RxJs.map((cmd) =>
         User.of({
           id: UserId.of(uuid()),
@@ -47,8 +47,15 @@ export class AuthController {
           createdAt: new Date(),
         }),
       ),
-      RxJs.tap(this.userRepo.add),
     );
-    return RxJs.lastValueFrom(handle);
+
+    const persist = cmd.pipe(RxJs.switchMap(this.userRepo.add));
+
+    const setCookie = cmd.pipe(
+      RxJs.map(this.jwtService.genAT),
+      RxJs.map(AuthHelper.setTokenToCookie(res)),
+    );
+
+    return RxJs.concat(persist, setCookie);
   }
 }

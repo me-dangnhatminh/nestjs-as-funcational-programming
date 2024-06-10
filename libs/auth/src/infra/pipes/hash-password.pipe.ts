@@ -4,16 +4,12 @@ import { CryptoService } from '../adapters';
 
 @Injectable()
 export class HashPasswordPipe<T extends { password: RawPassword }>
-  implements
-    PipeTransform<
-      T,
-      Promise<{ password: HashedPassword } & Omit<T, 'password'>>
-    >
+  implements PipeTransform<T, T & { password: HashedPassword }>
 {
   constructor(private readonly cryptoService: CryptoService) {}
 
-  async transform(value: T) {
-    const hashed = await this.cryptoService.hashPassword(value.password);
+  transform(value: T): T & { password: HashedPassword } {
+    const hashed = this.cryptoService.hashPassword(value.password);
     return { ...value, password: hashed };
   }
 }

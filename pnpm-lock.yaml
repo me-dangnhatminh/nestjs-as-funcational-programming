@@ -29,6 +29,9 @@ dependencies:
   effect:
     specifier: ^3.2.9
     version: 3.2.9
+  express:
+    specifier: ^4.19.2
+    version: 4.19.2
   joi:
     specifier: 17.12.3
     version: 17.12.3

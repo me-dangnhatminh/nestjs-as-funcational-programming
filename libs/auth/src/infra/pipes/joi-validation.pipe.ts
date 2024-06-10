@@ -11,6 +11,11 @@ export class JoiValidationPipe implements PipeTransform {
     return result.value;
   }
 }
+
+export function useJoiPipe(schema: Joi.Schema) {
+  return new JoiValidationPipe(schema);
+}
+
 export const joiValidationPipe: Provider = {
   provide: APP_PIPE,
   useValue: JoiValidationPipe,

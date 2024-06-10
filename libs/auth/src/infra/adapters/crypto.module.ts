@@ -1,16 +1,11 @@
-import {
-  ComparePassword,
-  HashedPassword,
-  HashPassword,
-} from '@app/auth/domain';
+import { ComparePassword, HashedPassword, RawPassword } from '@app/auth/domain';
 import { Global, Module } from '@nestjs/common';
-import { compare, hash } from 'bcrypt';
+import { compare, hashSync } from 'bcrypt';
 
 export class CryptoService {
-  hashPassword: HashPassword = async (password) => {
-    const hashed = await hash(password, 10);
-    return hashed as HashedPassword;
-  };
+  hashPassword(pass: RawPassword): HashedPassword {
+    return hashSync(pass, 10) as HashedPassword;
+  }
 
   comparePassword: ComparePassword = async (pass, hash) => {
     return compare(pass, hash);

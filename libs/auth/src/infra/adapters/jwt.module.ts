@@ -1,9 +1,10 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Injectable, Module } from '@nestjs/common';
 import * as NestJWT from '@nestjs/jwt';
 
+@Injectable()
 export class JwtService extends NestJWT.JwtService {
-  genAT(data: { id: string }): Promise<string> {
-    return this.signAsync(data);
+  genAT(data: { id: string }): string {
+    return 'token';
   }
 
   decodeAT(token: string): { id: string } {

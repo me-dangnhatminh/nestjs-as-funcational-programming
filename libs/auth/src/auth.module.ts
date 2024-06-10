@@ -1,11 +1,17 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
 
-import { AuthController, joiValidationPipe } from './infra';
+import { AuthController } from './infra';
 import { CryptoModule, JwtModule, PersistenceModule } from './infra/adapters';
+import { APP_PIPE } from '@nestjs/core';
 
 @Module({
   imports: [JwtModule, CryptoModule, PersistenceModule],
   controllers: [AuthController],
-  providers: [joiValidationPipe],
+  providers: [
+    {
+      provide: APP_PIPE,
+      useClass: ValidationPipe,
+    },
+  ],
 })
 export class AuthModule {}

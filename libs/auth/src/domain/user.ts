@@ -14,12 +14,14 @@ export type InvaidEmailAddress = `${string} is not a valid email address`;
 export type InvalidPassword = `${string} is not a valid password`;
 
 export type LocalAuth = {
+  provider: 'local';
   email: EmailAddress;
   password: HashedPassword;
   verifiedAt?: Date;
 };
 
 export type GoogleAuth = {
+  provider: 'google';
   email: EmailAddress;
   providerId: string;
   verifiedAt: Date;
@@ -27,23 +29,20 @@ export type GoogleAuth = {
 
 export type Auth = LocalAuth | GoogleAuth;
 
-export type User = {
-  id: UserId;
-
-  provider: Provider;
-  email?: EmailAddress;
-  password?: HashedPassword;
-  providerId?: string;
-  verifiedAt?: Date;
-
+export type Profile = {
   firstName?: string;
   lastName?: string;
   avatarUrl?: string;
+};
+
+export type User = {
+  id: UserId;
 
   createdAt: Date;
   updatedAt?: Date;
   removedAt?: Date;
-};
+} & Auth &
+  Profile;
 
 // map user to plain object
 
@@ -77,7 +76,6 @@ export const UserSchema = Joi.object<User>({
   updatedAt: Joi.date(),
   removedAt: Joi.date(),
 });
-export const HashedPasswordSchema = Joi.string<HashedPassword>();
 
 // export const InvalidEmailAddress = (value: string): InvaidEmailAddress =>
 //   `${value} is not a valid email address`;
@@ -110,6 +108,7 @@ export const toLocalAuth = (user: User): LocalAuth => {
     throw new Error('User is not a local user');
 
   return {
+    provider: 'local',
     email: user.email,
     password: user.password,
     verifiedAt: user.verifiedAt,
@@ -122,6 +121,7 @@ export const toGoogleAuth = (user: User): GoogleAuth => {
     throw new Error('User is not a google user');
 
   return {
+    provider: 'google',
     email: user.email,
     providerId: user.providerId,
     verifiedAt: user.verifiedAt,
@@ -144,6 +144,7 @@ export const EmailAddress = {
 } as const;
 
 export const RawPassword = {
+  is: F.flow(parsePassword, E.isRight),
   parse: parsePassword,
   of: F.flow(parsePassword, E.getOrThrowWith(F.identity)),
 } as const;
