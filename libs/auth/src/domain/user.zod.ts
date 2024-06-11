@@ -8,7 +8,9 @@ export type ValidatedEmail = z.infer<typeof ValidatedEmail>;
 export type RawPassword = z.infer<typeof RawPassword>;
 export type HashedPassword = z.infer<typeof HashedPassword>;
 export type UserPassword = z.infer<typeof UserPassword>;
+export type EmailComfirmClaim = z.infer<typeof EmailComfirmClaim>;
 
+export type AuthClaim = z.infer<typeof AuthClaim>;
 export type LocalAuth = z.infer<typeof LocalAuth>;
 export type GoogleAuth = z.infer<typeof GoogleAuth>;
 export type Auth = z.infer<typeof Auth>;
@@ -22,9 +24,18 @@ export type User = z.infer<typeof User>;
 // ============== Implementation ============== //
 export const UUID = z.string().uuid();
 export const EmailAddress = z.string().email().brand('EmailAddress');
-export const ValidatedEmail = EmailAddress.brand('ValidatedEmail');
+export const ValidatedEmail = z.object({
+  email: EmailAddress,
+  verifiedAt: z.date().default(() => new Date()),
+});
+
 export const RawPassword = z.string().min(8).max(128).brand('RawPassword');
 export const UserRole = z.union([z.literal('admin'), z.literal('user')]);
+export const EmailComfirmClaim = z.object({
+  email: EmailAddress,
+  iat: z.number().default(() => Date.now()),
+  exp: z.number().default(() => Date.now() + 1000 * 60 * 60 * 7), // 7 hours
+});
 
 export const HashedPassword = z
   .string({
@@ -38,17 +49,24 @@ export const HashedPassword = z
   .brand('HashedPassword');
 export const UserPassword = z.union([RawPassword, HashedPassword]);
 
+export const AuthClaim = z.object({
+  sub: UUID,
+  role: UserRole,
+  exp: z.number(),
+  iat: z.number(),
+});
+
 export const LocalAuth = z.object({
   provider: z.literal('local').default('local'),
-  email: z.union([EmailAddress, ValidatedEmail]),
   password: HashedPassword,
+  email: EmailAddress,
   verifiedAt: z.date().optional(),
 });
 
 export const GoogleAuth = z.object({
   provider: z.literal('google').default('google'),
-  email: ValidatedEmail,
   providerId: z.string(),
+  email: EmailAddress,
   verifiedAt: z.date(),
 });
 

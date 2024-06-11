@@ -13,13 +13,12 @@ import {
 import { CryptoService } from '../adapters';
 
 const INVALID_CREDENTIALS = 'Invalid email or password';
-const EMAIL_NOT_MATCH =
-  "ValidationLocalAuthPipe: userRepo.findByEmail doesn't return the correct user";
+const EMAIL_NOT_MATCH = `ValidationLocalAuthPipe: userRepo.findByEmail doesn't return the correct user`;
 const InvalidCredentials = () => new UnauthorizedException(INVALID_CREDENTIALS);
 const EmailNotMatch = () => new Error(EMAIL_NOT_MATCH);
 
 @Injectable()
-export class ValidationLocalAuthPipe<
+export class ValidLocalAuth<
   T extends {
     email: EmailAddress;
     password: RawPassword;

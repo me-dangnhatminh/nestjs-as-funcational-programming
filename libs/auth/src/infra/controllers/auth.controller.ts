@@ -1,30 +1,43 @@
-import { IUserRepository, User, UserLocalAuth } from '@app/auth/domain';
 import {
+  EmailComfirmClaim,
+  IUserRepository,
+  User,
+  UserLocalAuth,
+  ValidatedEmail,
+} from '@app/auth/domain';
+import {
+  BadRequestException,
   Body,
   Controller,
   HttpCode,
   HttpStatus,
   Post,
   Req,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, RequestWithUser } from 'express';
 import { Transactional } from '@nestjs-cls/transactional';
 
-import { SignInDTO, SignUpDTO } from './view-models';
+import { ConfirmEmailDTO, SignInDTO, SignUpDTO } from './view-models';
 import {
-  HashPasswordPipe,
   useZodPipe,
-  ValidationLocalAuthPipe,
-  ValidationUnusedEmail,
+  HashPassword,
+  ValidComfirmToken,
+  ValidLocalAuth,
+  ValidUnusedEmail,
 } from '../pipes';
+import { Authenticated } from '../guards';
 import { GenAndSetTokenToCookie } from '../interceptors';
-import { AuthHelper } from '../helpers';
+import { JwtService, MailerService } from '../adapters';
+import { authHelper } from '../helpers';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly userRepo: IUserRepository, // Write side
+    // private readonly mailerService: MailerService,
+    private readonly jwtService: JwtService,
   ) {}
 
   @Post('email/sign-up')
@@ -33,11 +46,11 @@ export class AuthController {
   @Transactional()
   async signUp(
     @Req() req: Request,
-    @Body(useZodPipe(SignUpDTO), ValidationUnusedEmail, HashPasswordPipe)
+    @Body(useZodPipe(SignUpDTO), ValidUnusedEmail, HashPassword)
     dto: unknown,
   ) {
     const user = User.parse(dto);
-    AuthHelper.addUserToReq(req)(user);
+    authHelper.addUserToReq(req)(user);
     await this.userRepo.add(user);
   }
 
@@ -46,11 +59,35 @@ export class AuthController {
   @UseInterceptors(GenAndSetTokenToCookie)
   @Transactional()
   async signIn(
-    @Body(useZodPipe(SignInDTO), ValidationLocalAuthPipe)
+    @Body(useZodPipe(SignInDTO), ValidLocalAuth)
     body: UserLocalAuth,
     @Req() req: Request,
   ) {
     const user = User.parse(body);
-    AuthHelper.addUserToReq(req)(user);
+    authHelper.addUserToReq(req)(user);
+  }
+
+  @Post('email/comfirm')
+  @HttpCode(HttpStatus.OK)
+  @Transactional()
+  async comfirmEmail(
+    @Body(useZodPipe(ConfirmEmailDTO), ValidComfirmToken)
+    dto: ValidatedEmail,
+  ) {
+    const user = await this.userRepo.findByEmail(dto.email);
+    const updated = User.parse(Object.assign(!user, dto));
+    await this.userRepo.update(updated);
+  }
+
+  @Post('email/comfirm/resend')
+  @HttpCode(HttpStatus.OK)
+  @Transactional()
+  @UseGuards(Authenticated)
+  async resendComfirmEmail(@Req() { user }: RequestWithUser) {
+    const isVerified = Boolean(user.verifiedAt);
+    if (isVerified) throw new BadRequestException('Email already verified');
+    const claim = EmailComfirmClaim.parse({ email: user.email });
+    const token = await this.jwtService.genConfirmToken(claim);
+    // return this.mailerService.sendConfirmationEmail(user.email, token);
   }
 }

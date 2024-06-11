@@ -27,3 +27,6 @@ export const SignInDTO = z
   })
   .strict();
 export type SignInDTO = z.infer<typeof SignInDTO>;
+
+export const ConfirmEmailDTO = z.object({ token: z.string() });
+export type ConfirmEmailDTO = z.infer<typeof ConfirmEmailDTO>;

@@ -22,6 +22,7 @@
   "dependencies": {
     "@nestjs-cls/transactional": "^2.3.1",
     "@nestjs-cls/transactional-adapter-prisma": "^1.2.1",
+    "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.0.0",

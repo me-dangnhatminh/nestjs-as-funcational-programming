@@ -3,7 +3,7 @@ import { PipeTransform, Injectable } from '@nestjs/common';
 import { CryptoService } from '../adapters';
 
 @Injectable()
-export class HashPasswordPipe<T extends { password: RawPassword }>
+export class HashPassword<T extends { password: RawPassword }>
   implements PipeTransform<T, T & { password: HashedPassword }>
 {
   constructor(private readonly cryptoService: CryptoService) {}
