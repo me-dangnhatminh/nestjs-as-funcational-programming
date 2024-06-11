@@ -1,5 +1,5 @@
 import { AuthClaim, EmailComfirmClaim } from '@app/auth/domain';
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import * as NestJWT from '@nestjs/jwt';
 
 const AT_SECRET = 'auth-secret'; // TODO: move to env
@@ -24,7 +24,6 @@ export class JwtService extends NestJWT.JwtService {
   }
 }
 
-@Global()
 @Module({
   imports: [
     NestJWT.JwtModule.register({

@@ -8,13 +8,8 @@ import { RequestWithUser, Response } from 'express';
 import { map, Observable } from 'rxjs';
 
 import { JwtService } from '../adapters';
-
-export interface Claim {
-  sub: string;
-  exp: number;
-  iat: number;
-  role: string;
-}
+import { AuthClaim } from '@app/auth/domain';
+import { authHelper } from '../helpers';
 
 export const AUTHENTICATED_KEY = 'x-user-authenticated' as const;
 
@@ -28,23 +23,11 @@ export class GenAndSetTokenToCookie implements NestInterceptor {
         const res = context.switchToHttp().getResponse<Response>();
         const req = context.switchToHttp().getRequest<RequestWithUser>();
         const user = req.user;
-        if (!user) throw new Error('User not found in request');
-        const now = Date.now();
-        const claim: Claim = {
-          sub: user.id,
-          exp: now + 1000 * 60 * 60 * 24 * 7, // 7 days TODO: move to config
-          iat: now,
-          role: user.role,
-        };
-        const token = this.jwtService.sign(claim, {
-          privateKey: 'secret-key',
-        });
 
-        res.cookie(AUTHENTICATED_KEY, token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days TODO: move to config
-        });
+        const claim = AuthClaim.parse({ sub: user.id, role: user.role });
+
+        const token = this.jwtService.genAT(claim);
+        authHelper.setTokenToCookie(res)(token);
 
         return value;
       }),

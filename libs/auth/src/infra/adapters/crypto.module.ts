@@ -4,7 +4,7 @@ import { compare, hashSync } from 'bcrypt';
 
 export class CryptoService {
   hashPassword(pass: RawPassword): HashedPassword {
-    return hashSync(pass, 10) as HashedPassword;
+    return hashSync(pass, 5) as HashedPassword;
   }
 
   comparePassword: ComparePassword = async (pass, hash) => {

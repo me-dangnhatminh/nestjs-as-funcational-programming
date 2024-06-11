@@ -7,20 +7,6 @@ function addUserToReq(req: Request) {
   };
 }
 
-const addTokenToRes = (res: Response) => (token: string) => {
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-  });
-};
-
-const setTokenToCookie = (res: Response) => (token: string) => {
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-  });
-};
-
 const AUTHENTICATED_KEY = 'x-authenticated-user';
 export const getTokenFromReq = (req: Request) => {
   const token = req.cookies[AUTHENTICATED_KEY];
@@ -28,7 +14,12 @@ export const getTokenFromReq = (req: Request) => {
   if (typeof token !== 'string') throw new Error('token is not a string');
   return token;
 };
-export const setTokenToRes =
+
+export const getTokenFromCookie = (req: Request) => {
+  return req.cookies[AUTHENTICATED_KEY] as string;
+};
+
+export const setTokenToCookie =
   (res: Response) => (token: string, options?: CookieOptions) => {
     res.cookie(AUTHENTICATED_KEY, token, {
       httpOnly: true,
@@ -39,10 +30,9 @@ export const setTokenToRes =
   };
 
 export const authHelper = {
-  addTokenToRes,
   setTokenToCookie,
+  getTokenFromCookie,
   addUserToReq,
   getTokenFromReq,
-  setTokenToRes,
 } as const;
 export default authHelper;

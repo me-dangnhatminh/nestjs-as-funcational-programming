@@ -34,7 +34,7 @@ export const UserRole = z.union([z.literal('admin'), z.literal('user')]);
 export const EmailComfirmClaim = z.object({
   email: EmailAddress,
   iat: z.number().default(() => Date.now()),
-  exp: z.number().default(() => Date.now() + 1000 * 60 * 60 * 7), // 7 hours
+  exp: z.number().default(() => Date.now() + 7 * 60 * 60 * 1000), // 7 hours
 });
 
 export const HashedPassword = z
@@ -52,15 +52,15 @@ export const UserPassword = z.union([RawPassword, HashedPassword]);
 export const AuthClaim = z.object({
   sub: UUID,
   role: UserRole,
-  exp: z.number(),
-  iat: z.number(),
+  iat: z.number().default(() => Date.now()),
+  exp: z.number().default(() => Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
 });
 
 export const LocalAuth = z.object({
   provider: z.literal('local').default('local'),
   password: HashedPassword,
   email: EmailAddress,
-  verifiedAt: z.date().optional(),
+  verifiedAt: z.date().optional().nullable(),
 });
 
 export const GoogleAuth = z.object({
@@ -73,9 +73,9 @@ export const GoogleAuth = z.object({
 export const Auth = z.union([LocalAuth, GoogleAuth]);
 
 export const Profile = z.object({
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  avatarUrl: z.string().optional(),
+  firstName: z.string().optional().nullable(),
+  lastName: z.string().optional().nullable(),
+  avatarUrl: z.string().optional().nullable(),
 });
 
 const BaseEntity = z.object({
@@ -84,8 +84,8 @@ const BaseEntity = z.object({
   role: UserRole.default('user'),
 
   createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().optional(),
-  removedAt: z.date().optional(),
+  updatedAt: z.date().optional().nullable(),
+  removedAt: z.date().optional().nullable(),
 });
 
 export const UserLocalAuth = BaseEntity.merge(LocalAuth).merge(Profile);

@@ -9,6 +9,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -36,9 +37,15 @@ import { authHelper } from '../helpers';
 export class AuthController {
   constructor(
     private readonly userRepo: IUserRepository, // Write side
-    // private readonly mailerService: MailerService,
+    private readonly mailerService: MailerService,
     private readonly jwtService: JwtService,
   ) {}
+
+  @Get('me')
+  @UseGuards(Authenticated)
+  getMe(@Req() { user }: RequestWithUser) {
+    return { id: user.id, email: user.email, verifiedAt: user.verifiedAt };
+  }
 
   @Post('email/sign-up')
   @HttpCode(HttpStatus.CREATED)
@@ -57,13 +64,11 @@ export class AuthController {
   @Post('email/sign-in')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(GenAndSetTokenToCookie)
-  @Transactional()
   async signIn(
     @Body(useZodPipe(SignInDTO), ValidLocalAuth)
-    body: UserLocalAuth,
+    user: UserLocalAuth,
     @Req() req: Request,
   ) {
-    const user = User.parse(body);
     authHelper.addUserToReq(req)(user);
   }
 
@@ -88,6 +93,6 @@ export class AuthController {
     if (isVerified) throw new BadRequestException('Email already verified');
     const claim = EmailComfirmClaim.parse({ email: user.email });
     const token = await this.jwtService.genConfirmToken(claim);
-    // return this.mailerService.sendConfirmationEmail(user.email, token);
+    return this.mailerService.sendConfirmationEmail(user.email, token);
   }
 }

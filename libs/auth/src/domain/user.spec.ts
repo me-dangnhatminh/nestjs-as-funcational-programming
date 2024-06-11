@@ -1,4 +1,4 @@
-import User, { EmailAddress, UserId } from './user';
+import User, { EmailAddress, UserId } from './user.joi';
 import { Either as E } from 'effect';
 import * as Joi from 'joi';
 

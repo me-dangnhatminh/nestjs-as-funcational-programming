@@ -1,9 +1,12 @@
-import { Module } from '@nestjs/common';
+import { Injectable, Module } from '@nestjs/common';
 import * as NestMailer from '@nestjs-modules/mailer';
 
-export class MailerService extends NestMailer.MailerService {
+@Injectable()
+export class MailerService {
+  constructor(private readonly mailer: NestMailer.MailerService) {}
+
   sendConfirmationEmail(email: string, token: string) {
-    return this.sendMail({
+    return this.mailer.sendMail({
       to: email,
       subject: 'Confirm Email',
       template: 'confirm-email',
@@ -13,6 +16,18 @@ export class MailerService extends NestMailer.MailerService {
 }
 
 @Module({
+  imports: [
+    NestMailer.MailerModule.forRoot({
+      transport: {
+        host: 'smtp.example.com', // 'smtp.example.com
+        port: 587,
+        auth: {
+          user: '123456', // '123456
+          pass: '123456', // '123456
+        },
+      },
+    }),
+  ],
   providers: [MailerService],
   exports: [MailerService],
 })
