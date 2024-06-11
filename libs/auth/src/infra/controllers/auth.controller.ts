@@ -9,7 +9,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Request } from 'express';
-import * as RxJs from 'rxjs';
+import { Transactional } from '@nestjs-cls/transactional';
 
 import { SignInDTO, SignUpDTO } from './view-models';
 import {
@@ -30,22 +30,21 @@ export class AuthController {
   @Post('email/sign-up')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(GenAndSetTokenToCookie)
-  // send welcome email
-  signUp(
+  @Transactional()
+  async signUp(
     @Req() req: Request,
     @Body(useZodPipe(SignUpDTO), ValidationUnusedEmail, HashPasswordPipe)
     dto: unknown,
   ) {
     const user = User.parse(dto);
     AuthHelper.addUserToReq(req)(user);
-    const persist = this.userRepo.add(user);
-    // add location header
-    return RxJs.from(persist);
+    await this.userRepo.add(user);
   }
 
   @Post('email/sign-in')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(GenAndSetTokenToCookie)
+  @Transactional()
   async signIn(
     @Body(useZodPipe(SignInDTO), ValidationLocalAuthPipe)
     body: UserLocalAuth,
@@ -53,6 +52,5 @@ export class AuthController {
   ) {
     const user = User.parse(body);
     AuthHelper.addUserToReq(req)(user);
-    return RxJs.of(null);
   }
 }

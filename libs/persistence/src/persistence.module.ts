@@ -4,14 +4,15 @@ import { ClsModule } from 'nestjs-cls';
 import { ClsPluginTransactional } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
-import { PrismaModule, PrismaService } from './prisma';
+import { PrismaModule } from './prisma';
+import { PrismaClient } from '@prisma/client';
 
 const clsModule = ClsModule.forRoot({
   plugins: [
     new ClsPluginTransactional({
-      imports: [PrismaModule],
+      imports: [PrismaClient],
       adapter: new TransactionalAdapterPrisma({
-        prismaInjectionToken: PrismaService,
+        prismaInjectionToken: PrismaClient,
       }),
     }),
   ],

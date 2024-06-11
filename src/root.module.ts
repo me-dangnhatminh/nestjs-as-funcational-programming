@@ -1,9 +1,14 @@
 import { AuthModule } from '@app/auth';
 import { PersistencesModule } from '@app/persistence';
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PersistencesModule, AuthModule],
+  imports: [
+    ConfigModule.forRoot({ envFilePath: '.env' }),
+    PersistencesModule,
+    AuthModule,
+  ],
 })
 export class RootModule {}
 export default RootModule;

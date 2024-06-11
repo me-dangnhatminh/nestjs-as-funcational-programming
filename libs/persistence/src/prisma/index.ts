@@ -1,11 +1,21 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import repositories from './repositories';
-import { PrismaService } from './prisma.service';
+import { PrismaClient } from '@prisma/client';
 
 @Module({
   imports: [],
-  providers: [PrismaService, ...repositories],
-  exports: [PrismaService, ...repositories],
+  providers: [PrismaClient, ...repositories],
+  exports: [PrismaClient, ...repositories],
 })
-export class PrismaModule {}
-export * from './prisma.service';
+export class PrismaModule implements OnModuleInit {
+  private readonly log = new Logger(PrismaModule.name);
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async onModuleInit() {
+    await this.prisma
+      .$connect()
+      .then(() => this.log.log('Prisma connected'))
+      .catch((error) => this.log.error('Prisma connection error', error));
+  }
+}
+export default PrismaModule;
