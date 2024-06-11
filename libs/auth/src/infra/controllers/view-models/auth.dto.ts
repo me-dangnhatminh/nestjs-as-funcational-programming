@@ -1,18 +1,31 @@
-import {
-  EmailAddress,
-  RawPassword,
-  EmailSchema,
-  RawPasswordSchema,
-} from '@app/auth/domain';
+import { EmailAddress, RawPassword } from '@app/auth/domain';
+import { v4 as uuid } from 'uuid';
+import * as z from 'zod';
 
-import * as Joi from 'joi';
+export const SignUpDTO = z
+  .object({
+    id: z
+      .string()
+      .uuid()
+      .default(() => uuid()),
+    provider: z.literal('local').default('local'),
+    email: EmailAddress,
+    password: RawPassword,
 
-export type SignUpDTO = {
-  email: EmailAddress;
-  password: RawPassword;
-};
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    avatarUrl: z.string().optional(),
 
-export const SignUpDTO = Joi.object<SignUpDTO, true>({
-  email: EmailSchema.required(),
-  password: RawPasswordSchema.required(),
-}).options({ abortEarly: false });
+    createdAt: z.date().default(() => new Date()),
+  })
+  .strict();
+export type SignUpDTO = z.infer<typeof SignUpDTO>;
+
+export const SignInDTO = z
+  .object({
+    provider: z.literal('local').default('local'),
+    email: EmailAddress,
+    password: RawPassword,
+  })
+  .strict();
+export type SignInDTO = z.infer<typeof SignInDTO>;

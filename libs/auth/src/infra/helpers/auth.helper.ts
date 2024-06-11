@@ -1,4 +1,11 @@
-import { CookieOptions, Response, Request } from 'express';
+import { User } from '@app/auth/domain';
+import { Response, Request } from 'express';
+
+function addUserToReq(req: Request) {
+  return (user: User) => {
+    Object.assign(req, { user });
+  };
+}
 
 const addTokenToRes = (res: Response) => (token: string) => {
   res.cookie('token', token, {
@@ -17,5 +24,6 @@ const setTokenToCookie = (res: Response) => (token: string) => {
 export const AuthHelper = {
   addTokenToRes,
   setTokenToCookie,
+  addUserToReq,
 } as const;
 export default AuthHelper;

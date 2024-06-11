@@ -1,4 +1,4 @@
-import User, { EmailAddress, HashedPassword, RawPassword } from './user';
+import { EmailAddress, HashedPassword, RawPassword, User } from './user.zod';
 
 export abstract class IUserRepository {
   abstract findByEmail(

@@ -7,11 +7,6 @@ import { APP_PIPE } from '@nestjs/core';
 @Module({
   imports: [JwtModule, CryptoModule, PersistenceModule],
   controllers: [AuthController],
-  providers: [
-    {
-      provide: APP_PIPE,
-      useClass: ValidationPipe,
-    },
-  ],
+  providers: [{ provide: APP_PIPE, useClass: ValidationPipe }],
 })
 export class AuthModule {}

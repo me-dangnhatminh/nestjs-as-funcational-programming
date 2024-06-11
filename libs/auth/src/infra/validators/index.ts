@@ -9,7 +9,7 @@ import { EmailAddress, IUserRepository } from '@app/auth/domain';
 @ValidatorConstraint({ async: true })
 export class EmailAddressValidator implements ValidatorConstraintInterface {
   validate(value: EmailAddress | string): value is EmailAddress {
-    return EmailAddress.is(value);
+    return EmailAddress.safeParse(value).success;
   }
 
   defaultMessage() {

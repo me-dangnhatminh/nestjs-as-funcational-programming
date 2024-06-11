@@ -1,61 +1,52 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  HashedPassword,
-  IUserRepository,
-  User,
-  UserId,
-} from '@app/auth/domain';
+import { IUserRepository, User, UserLocalAuth } from '@app/auth/domain';
 import {
   Body,
   Controller,
   HttpCode,
   HttpStatus,
   Post,
-  Res,
+  Req,
+  UseInterceptors,
 } from '@nestjs/common';
-import { Response } from 'express';
-
-import { SignUpDTO } from './view-models';
-import { v4 as uuid } from 'uuid';
+import { Request } from 'express';
 import * as RxJs from 'rxjs';
-import { HashPasswordPipe, useJoiPipe } from '../pipes';
-import { JwtService } from '../adapters';
-import AuthHelper from '../helpers/auth.helper';
-import { Function as F } from 'effect';
+
+import { SignInDTO, SignUpDTO } from './view-models';
+import {
+  HashPasswordPipe,
+  useZodPipe,
+  ValidationLocalAuthPipe,
+} from '../pipes';
+import { GenAndSetTokenToCookie } from '../interceptors';
+import { AuthHelper } from '../helpers';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly userRepo: IUserRepository,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly userRepo: IUserRepository) {}
 
   @Post('email/sign-up')
   @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(GenAndSetTokenToCookie)
   signUp(
-    @Body(useJoiPipe(SignUpDTO), HashPasswordPipe)
-    body: SignUpDTO & { password: HashedPassword },
-    @Res({ passthrough: true }) res: Response,
+    @Body(useZodPipe(SignUpDTO), HashPasswordPipe) dto: unknown,
+    @Req() req: Request,
   ) {
-    const cmd = RxJs.of(body).pipe(
-      RxJs.map((cmd) =>
-        User.of({
-          id: UserId.of(uuid()),
-          provider: 'local',
-          email: cmd.email,
-          password: cmd.password,
-          createdAt: new Date(),
-        }),
-      ),
-    );
+    const user = User.parse(dto);
+    const persist = RxJs.of(user).pipe(RxJs.switchMap(this.userRepo.add));
+    persist.subscribe(() => AuthHelper.addUserToReq(req)(user));
+    return RxJs.concat(persist, RxJs.of(null));
+  }
 
-    const persist = cmd.pipe(RxJs.switchMap(this.userRepo.add));
-
-    const setCookie = cmd.pipe(
-      RxJs.map(this.jwtService.genAT),
-      RxJs.map(AuthHelper.setTokenToCookie(res)),
-    );
-
-    return RxJs.concat(persist, setCookie);
+  @Post('email/sign-in')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(GenAndSetTokenToCookie)
+  async signIn(
+    @Body(useZodPipe(SignInDTO), ValidationLocalAuthPipe)
+    body: UserLocalAuth,
+    @Req() req: Request,
+  ) {
+    const user = User.parse(body);
+    AuthHelper.addUserToReq(req)(user);
+    return RxJs.of(null);
   }
 }

@@ -10,6 +10,6 @@ export class HashPasswordPipe<T extends { password: RawPassword }>
 
   transform(value: T): T & { password: HashedPassword } {
     const hashed = this.cryptoService.hashPassword(value.password);
-    return { ...value, password: hashed };
+    return Object.assign({}, value, { password: hashed });
   }
 }

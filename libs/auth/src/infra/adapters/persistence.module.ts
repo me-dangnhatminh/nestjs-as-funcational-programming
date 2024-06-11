@@ -18,7 +18,7 @@ class UserRepository implements IUserRepository {
       setTimeout(() => {
         console.log('User added:', user);
         resolve();
-      }, 5000);
+      }, 2000);
     });
   }
   update(user: User): Promise<void> {
