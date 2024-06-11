@@ -42,9 +42,7 @@ export function IsEmailAddress(validationOptions?: ValidationOptions) {
   };
 }
 
-export function IsUniqueEmail(
-  validationOptions?: ValidationOptions,
-): PropertyDecorator {
+export function IsUniqueEmail(validationOptions?: ValidationOptions) {
   return (object: any, propertyName: string) => {
     registerDecorator({
       target: object.constructor,

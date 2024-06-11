@@ -1,13 +1,13 @@
 import { EmailAddress, RawPassword } from '@app/auth/domain';
-import { v4 as uuid } from 'uuid';
 import * as z from 'zod';
 
+import { v4 as uuid } from 'uuid';
 export const SignUpDTO = z
   .object({
     id: z
       .string()
-      .uuid()
-      .default(() => uuid()),
+      .transform(() => uuid())
+      .default(uuid),
     provider: z.literal('local').default('local'),
     email: EmailAddress,
     password: RawPassword,
@@ -15,8 +15,6 @@ export const SignUpDTO = z
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     avatarUrl: z.string().optional(),
-
-    createdAt: z.date().default(() => new Date()),
   })
   .strict();
 export type SignUpDTO = z.infer<typeof SignUpDTO>;

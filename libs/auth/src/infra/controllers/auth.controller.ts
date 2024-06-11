@@ -16,25 +16,31 @@ import {
   HashPasswordPipe,
   useZodPipe,
   ValidationLocalAuthPipe,
+  ValidationUnusedEmail,
 } from '../pipes';
 import { GenAndSetTokenToCookie } from '../interceptors';
 import { AuthHelper } from '../helpers';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly userRepo: IUserRepository) {}
+  constructor(
+    private readonly userRepo: IUserRepository, // Write side
+  ) {}
 
   @Post('email/sign-up')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(GenAndSetTokenToCookie)
+  // send welcome email
   signUp(
-    @Body(useZodPipe(SignUpDTO), HashPasswordPipe) dto: unknown,
     @Req() req: Request,
+    @Body(useZodPipe(SignUpDTO), ValidationUnusedEmail, HashPasswordPipe)
+    dto: unknown,
   ) {
     const user = User.parse(dto);
-    const persist = RxJs.of(user).pipe(RxJs.switchMap(this.userRepo.add));
-    persist.subscribe(() => AuthHelper.addUserToReq(req)(user));
-    return RxJs.concat(persist, RxJs.of(null));
+    AuthHelper.addUserToReq(req)(user);
+    const persist = this.userRepo.add(user);
+    // add location header
+    return RxJs.from(persist);
   }
 
   @Post('email/sign-in')

@@ -20,16 +20,20 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs-cls/transactional": "^2.3.1",
+    "@nestjs-cls/transactional-adapter-prisma": "^1.2.1",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/platform-express": "^10.0.0",
+    "@prisma/client": "^5.15.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "effect": "^3.2.9",
     "express": "^4.19.2",
     "joi": "17.12.3",
+    "nestjs-cls": "^4.3.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "uuid": "^9.0.1",
@@ -84,7 +88,11 @@
     ],
     "moduleNameMapper": {
       "^@app/auth(|/.*)$": "<rootDir>/libs/auth/src/$1",
-      "^@app/core(|/.*)$": "<rootDir>/libs/core/src/$1"
+      "^@app/core(|/.*)$": "<rootDir>/libs/core/src/$1",
+      "^@app/persistence(|/.*)$": "<rootDir>/libs/persistence/src/$1"
     }
+  },
+  "prisma": {
+    "schema": "libs/persistence/src/prisma/schema.prisma"
   }
 }

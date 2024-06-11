@@ -14,6 +14,8 @@
     "@app/auth/(.*)": "<rootDir>/../libs/auth/src/$1",
     "@app/auth": "<rootDir>/../libs/auth/src",
     "@app/core/(.*)": "<rootDir>/../libs/core/src/$1",
-    "@app/core": "<rootDir>/../libs/core/src"
+    "@app/core": "<rootDir>/../libs/core/src",
+    "@app/persistence/(.*)": "<rootDir>/../libs/persistence/src/$1",
+    "@app/persistence": "<rootDir>/../libs/persistence/src"
   }
 }

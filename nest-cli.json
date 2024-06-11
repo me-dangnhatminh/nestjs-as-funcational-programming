@@ -7,6 +7,15 @@
     "webpack": true
   },
   "projects": {
+    "core": {
+      "type": "library",
+      "root": "libs/core",
+      "entryFile": "index",
+      "sourceRoot": "libs/core/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/core/tsconfig.lib.json"
+      }
+    },
     "auth": {
       "type": "library",
       "root": "libs/auth",
@@ -16,13 +25,13 @@
         "tsConfigPath": "libs/auth/tsconfig.lib.json"
       }
     },
-    "core": {
+    "persistence": {
       "type": "library",
-      "root": "libs/core",
+      "root": "libs/persistence",
       "entryFile": "index",
-      "sourceRoot": "libs/core/src",
+      "sourceRoot": "libs/persistence/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/core/tsconfig.lib.json"
+        "tsConfigPath": "libs/persistence/tsconfig.lib.json"
       }
     }
   }
