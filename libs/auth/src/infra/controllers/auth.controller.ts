@@ -4,7 +4,6 @@ import {
   IUserRepository,
   toClaim,
   User,
-  UserLocalAuth,
   ValidatedEmail,
 } from '@app/auth/domain';
 import {
@@ -74,7 +73,7 @@ export class AuthController {
   @UseInterceptors(GenAndSetTokenToCookie)
   async signIn(
     @Body(useZodPipe(SignInDTO), ValidLocalAuth)
-    user: UserLocalAuth,
+    user: User,
     @Req() req: Request,
   ) {
     authHelper.addUserToReq(req)(user);
