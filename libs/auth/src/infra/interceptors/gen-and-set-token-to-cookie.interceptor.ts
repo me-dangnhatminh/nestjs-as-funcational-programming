@@ -7,8 +7,8 @@ import {
 import { RequestWithUser, Response } from 'express';
 import { map, Observable } from 'rxjs';
 
+import { toClaim } from '@app/auth/domain';
 import { JwtService } from '../adapters';
-import { AuthClaim } from '@app/auth/domain';
 import { authHelper } from '../helpers';
 
 export const AUTHENTICATED_KEY = 'x-user-authenticated' as const;
@@ -24,8 +24,7 @@ export class GenAndSetTokenToCookie implements NestInterceptor {
         const req = context.switchToHttp().getRequest<RequestWithUser>();
         const user = req.user;
 
-        const claim = AuthClaim.parse({ sub: user.id, role: user.role });
-
+        const claim = toClaim(user);
         const token = this.jwtService.genAT(claim);
         authHelper.setTokenToCookie(res)(token);
 

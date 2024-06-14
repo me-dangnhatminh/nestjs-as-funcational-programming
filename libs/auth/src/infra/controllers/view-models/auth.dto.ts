@@ -30,3 +30,9 @@ export type SignInDTO = z.infer<typeof SignInDTO>;
 
 export const ConfirmEmailDTO = z.object({ token: z.string() });
 export type ConfirmEmailDTO = z.infer<typeof ConfirmEmailDTO>;
+
+export const ResetPasswordDTO = z.object({
+  token: z.string(),
+  password: RawPassword,
+});
+export type ResetPasswordDTO = z.infer<typeof ResetPasswordDTO>;

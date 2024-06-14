@@ -5,12 +5,25 @@ import * as NestMailer from '@nestjs-modules/mailer';
 export class MailerService {
   constructor(private readonly mailer: NestMailer.MailerService) {}
 
-  sendConfirmationEmail(email: string, token: string) {
+  sendConfirmationEmail(user: { email: string }, token: string) {
+    const { email } = user;
     return this.mailer.sendMail({
       to: email,
       subject: 'Confirm Email',
       template: 'confirm-email',
       context: { token },
+      html: '<b>Confirm Email</b>',
+    });
+  }
+
+  sendForgotPasswordEmail(user: { email: string }, token: string) {
+    const { email } = user;
+    return this.mailer.sendMail({
+      to: email,
+      subject: 'Reset Password',
+      template: 'reset-password',
+      context: { token },
+      html: '<b>Reset Password</b>',
     });
   }
 }

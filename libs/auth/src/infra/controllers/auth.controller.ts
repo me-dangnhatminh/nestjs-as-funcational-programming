@@ -1,6 +1,8 @@
 import {
-  EmailComfirmClaim,
+  EmailAddress,
+  HashedPassword,
   IUserRepository,
+  toClaim,
   User,
   UserLocalAuth,
   ValidatedEmail,
@@ -20,13 +22,19 @@ import {
 import { Request, RequestWithUser } from 'express';
 import { Transactional } from '@nestjs-cls/transactional';
 
-import { ConfirmEmailDTO, SignInDTO, SignUpDTO } from './view-models';
+import {
+  ConfirmEmailDTO,
+  ResetPasswordDTO,
+  SignInDTO,
+  SignUpDTO,
+} from './view-models';
 import {
   useZodPipe,
   HashPassword,
   ValidComfirmToken,
   ValidLocalAuth,
   ValidUnusedEmail,
+  ValidForgotPasswordToken,
 } from '../pipes';
 import { Authenticated } from '../guards';
 import { GenAndSetTokenToCookie } from '../interceptors';
@@ -91,8 +99,29 @@ export class AuthController {
   async resendComfirmEmail(@Req() { user }: RequestWithUser) {
     const isVerified = Boolean(user.verifiedAt);
     if (isVerified) throw new BadRequestException('Email already verified');
-    const claim = EmailComfirmClaim.parse({ email: user.email });
+    const claim = toClaim(user);
     const token = await this.jwtService.genConfirmToken(claim);
-    return this.mailerService.sendConfirmationEmail(user.email, token);
+    return this.mailerService.sendConfirmationEmail(user, token);
+  }
+
+  @Post('password/forgot')
+  @HttpCode(HttpStatus.OK)
+  @Transactional()
+  async forgotPassword(@Req() { user }: RequestWithUser) {
+    const claim = toClaim(user);
+    const token = await this.jwtService.genForgotPassToken(claim);
+    return this.mailerService.sendForgotPasswordEmail(user, token);
+  }
+
+  @Post('password/reset')
+  @HttpCode(HttpStatus.OK)
+  @Transactional()
+  async resetPassword(
+    @Body(useZodPipe(ResetPasswordDTO), ValidForgotPasswordToken, HashPassword)
+    { email, password }: { email: EmailAddress; password: HashedPassword },
+  ) {
+    const user = await this.userRepo.findByEmail(email);
+    const updated = User.parse(Object.assign({}, user, { password }));
+    await this.userRepo.update(updated);
   }
 }
