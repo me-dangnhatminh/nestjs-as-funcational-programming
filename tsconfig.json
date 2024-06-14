@@ -21,14 +21,30 @@
     "exactOptionalPropertyTypes": true,
     "strict": true,
     "paths": {
-      "@app/core": ["libs/core/src"],
-      "@app/core/*": ["libs/core/src/*"],
-
-      "@app/auth": ["libs/auth/src"],
-      "@app/auth/*": ["libs/auth/src/*"],
-
-      "@app/persistence": ["libs/persistence/src"],
-      "@app/persistence/*": ["libs/persistence/src/*"]
+      "@app/core": [
+        "libs/core/src"
+      ],
+      "@app/core/*": [
+        "libs/core/src/*"
+      ],
+      "@app/auth": [
+        "libs/auth/src"
+      ],
+      "@app/auth/*": [
+        "libs/auth/src/*"
+      ],
+      "@app/persistence": [
+        "libs/persistence/src"
+      ],
+      "@app/persistence/*": [
+        "libs/persistence/src/*"
+      ],
+      "@app/storage": [
+        "libs/storage/src"
+      ],
+      "@app/storage/*": [
+        "libs/storage/src/*"
+      ]
     }
   }
 }

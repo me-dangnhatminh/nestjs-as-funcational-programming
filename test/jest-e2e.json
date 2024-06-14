@@ -16,6 +16,8 @@
     "@app/core/(.*)": "<rootDir>/../libs/core/src/$1",
     "@app/core": "<rootDir>/../libs/core/src",
     "@app/persistence/(.*)": "<rootDir>/../libs/persistence/src/$1",
-    "@app/persistence": "<rootDir>/../libs/persistence/src"
+    "@app/persistence": "<rootDir>/../libs/persistence/src",
+    "@app/storage/(.*)": "<rootDir>/../libs/storage/src/$1",
+    "@app/storage": "<rootDir>/../libs/storage/src"
   }
 }
