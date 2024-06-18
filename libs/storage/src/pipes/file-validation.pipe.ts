@@ -1,4 +1,11 @@
-import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  PipeTransform,
+} from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { Request } from 'express';
 
 @Injectable()
 export class FileValidationPipe
@@ -16,8 +23,7 @@ const NotEnoughFreeSpace = (freeSpace: number) =>
 
 @Injectable()
 export class ValidFreeSpace implements PipeTransform {
-  constructor() {}
-
+  constructor(@Inject(REQUEST) protected readonly request: Request) {}
   transform(file: Express.Multer.File) {
     const freeSpace = 10000; // 10MB
     const value = file.size;

@@ -5,16 +5,21 @@ type NonEmptyArray<T> = [T, ...T[]];
 type Event<TType extends string, TData> = { type: TType; data: TData };
 
 // -- add file
-type FileAddedEventData = { folderId: UUID; file: FileRef };
-type FileAddedEvent = Event<'FileAdded', FileAddedEventData>;
+type FileAddedEvent = Event<'FileAdded', { folderId: UUID; file: FileRef }>;
 type AddFileFailure = 'NotPermitted' | 'NotEnoughSpace';
 type Added = NonEmptyArray<FileAddedEvent>;
 type AddFileResult = E.Either<Added, AddFileFailure>;
+
+const AddFileEvent = (data: FileAddedEvent['data']): FileAddedEvent => ({
+  type: 'FileAdded',
+  data,
+});
 
 const isOwnerOf = (
   root: StorageRoot,
   acessorId: AccessorId,
 ): acessorId is OwnerId => root.id === acessorId;
+
 const addFile = (parms: [StorageRoot, AccessorId, FileRef]): AddFileResult => {
   const [root, acessorId, file] = parms;
   const isOwner = isOwnerOf(root, acessorId);
@@ -23,13 +28,11 @@ const addFile = (parms: [StorageRoot, AccessorId, FileRef]): AddFileResult => {
   const isEnoughSpace = free >= file.size;
   if (isEnoughSpace) return E.left('NotEnoughSpace');
   const folderId = root.ref.id;
-  const event: FileAddedEvent = { type: 'FileAdded', data: { folderId, file } };
-  return E.right([event]);
+  return E.right([AddFileEvent({ folderId, file })]);
 };
 
 // -- remove file
-type FileRemovedEventData = { folderId: UUID; fileId: UUID };
-type FileRemovedEvent = Event<'FileRemoved', FileRemovedEventData>;
+type FileRemovedEvent = Event<'FileRemoved', { folderId: UUID; fileId: UUID }>;
 type RemoveFileFailure = 'NotPermitted';
 type RemoveFileResult = E.Either<
   NonEmptyArray<FileRemovedEvent>,
