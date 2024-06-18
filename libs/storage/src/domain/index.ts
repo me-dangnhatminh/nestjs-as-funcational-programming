@@ -10,7 +10,12 @@ export type BytesInteger = z.infer<typeof BytesInteger>;
 export type UUID = z.infer<typeof UUID>;
 export type ContentTypes = z.infer<typeof ContentTypes>;
 export type FileName = z.infer<typeof FileName>;
+
 export type OwnerId = z.infer<typeof OwnerId>;
+export type ReaderId = z.infer<typeof ReaderId>;
+export type WriterId = z.infer<typeof WriterId>;
+export type AccessorId = OwnerId | ReaderId | WriterId;
+
 export type FileRef = z.infer<typeof FileRef>;
 export type FolderName = z.infer<typeof FolderName>;
 export type FolderType = z.infer<typeof FolderType>;
@@ -18,8 +23,9 @@ export type FolderAgg = z.infer<typeof FolderAgg> & {
   content: (FileRef | FolderAgg)[];
 };
 
+export type StorageRoot = z.infer<typeof StorageRoot>;
 // ============================= Schemas ============================= //
-export const Integer = z.number().int().positive().brand('Integer');
+export const Integer = z.number().int();
 export const ByteUnit = z.literal('B').brand('ByteUnit');
 export const Bytes = z
   .string()
@@ -36,12 +42,15 @@ export const Bytes = z
     { message: 'Invalid Bytes format, should be like "100 B"' },
   )
   .brand('Bytes');
-export const BytesInteger = Integer.brand('BytesInteger');
+export const BytesInteger = Integer.positive().brand('BytesInteger');
 
-const UUID = z.string().uuid();
-const ContentTypes = z.string().brand('ContentTypes');
-const FileName = z.string().min(1).max(255).brand('FileName');
-const OwnerId = z.string().uuid().brand('OwnerId');
+export const UUID = z.string().uuid().brand('UUID');
+export const ContentTypes = z.string().brand('ContentTypes');
+export const FileName = z.string().min(1).max(255).brand('FileName');
+
+export const OwnerId = UUID.brand('OwnerId');
+export const ReaderId = UUID.brand('ReaderId');
+export const WriterId = UUID.brand('WriterId');
 
 export const FileRef = z
   .object({
@@ -71,39 +80,30 @@ export const FolderAgg = z
     ownerId: OwnerId,
     parentId: UUID.optional(),
     contentType: FolderType,
-    content: z.array(z.union([FileRef, z.lazy(() => FolderAgg)])),
+
+    // content
+    files: z.array(FileRef).optional(), // null is for lazy loading
+    folderIds: z.array(UUID).optional(), // null is for lazy loading
   })
   .brand('Folder');
 
-// ============================= Utils ============================= //
-// TODO: use DecimalJS for better precision
-import { Either as E } from 'effect';
-export type RemoveFileError = 'FileNotFound';
+export const StorageRoot = z
+  .object({
+    id: UUID,
+    totalSpace: BytesInteger,
+    usedSpace: BytesInteger,
+    ref: FolderAgg,
+  })
+  .refine((val) => val.totalSpace - val.usedSpace >= 0, {
+    message: 'Used space should not be greater than total space',
+  })
+  .brand('StorageRoot');
+// ============================= Contracts (Facade pattern) ============================= //
+export abstract class IStorageRepository {
+  abstract findFolder(folderId: UUID): Promise<FolderAgg | null>;
+  abstract addFolder(folder: FolderAgg): Promise<FolderAgg>;
+  abstract updateFolder(folder: FolderAgg): Promise<FolderAgg>;
+  abstract removeFolder(folder: FolderAgg): Promise<void>;
+}
 
-const addFile = (
-  folder: FolderAgg,
-  file: FileRef,
-): E.Either<FolderAgg, never> => {
-  folder.content.push(file);
-  const size = folder.size + file.size;
-  folder.size = size as BytesInteger;
-  return E.right(FolderAgg.parse(folder));
-};
-
-const removeFile = (
-  folder: FolderAgg,
-  fileId: UUID,
-): E.Either<FolderAgg, RemoveFileError> => {
-  const fileIndex = folder.content.findIndex((f) => f.id === fileId);
-  if (fileIndex === -1) return E.left('FileNotFound');
-  const [file] = folder.content.splice(fileIndex, 1);
-  const size = folder.size - file.size;
-  folder.size = size as BytesInteger;
-  return E.right(FolderAgg.parse(folder));
-};
-
-export const StorageDomain = {
-  addFile,
-  removeFile,
-};
-export default StorageDomain;
+export * from './commands'; // TODO: export all commands
