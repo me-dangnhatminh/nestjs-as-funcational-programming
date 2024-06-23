@@ -50,7 +50,7 @@ model FileRef {
   thumbnail   String?
   description String?
 
-  belongsTo FolderContent? @relation("FolderContent")
+  parent FileFolder?
 }
 
 model Folder {
@@ -63,26 +63,23 @@ model Folder {
 
   ownerId String
 
-  content FolderContent[]  @relation("FolderContent")
-  nested  NestedSetFolder? @relation("NestedFolder")
+  // nested set model and parent relation
+  lft      Int     @default(0)
+  rgt      Int     @default(0)
+  parentId String?
+
+  parent  Folder?  @relation("ParentFolder", fields: [parentId], references: [id])
+  folders Folder[] @relation("ParentFolder")
+
+  files FileFolder[]
 }
 
-model FolderContent {
+model FileFolder {
   id String @id
 
   folderId String
   fileId   String @unique
 
-  folder Folder  @relation("FolderContent", fields: [folderId], references: [id], onDelete: Cascade)
-  file   FileRef @relation("FolderContent", fields: [fileId], references: [id], onDelete: Cascade)
-}
-
-model NestedSetFolder {
-  id       String @id
-  folderId String @unique
-
-  lft Int
-  rgt Int
-
-  folder Folder @relation("NestedFolder", fields: [folderId], references: [id], onDelete: Cascade)
+  folder Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  file   FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
 }
