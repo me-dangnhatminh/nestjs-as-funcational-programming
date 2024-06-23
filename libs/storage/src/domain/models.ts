@@ -17,9 +17,11 @@ export type WriterId = z.infer<typeof WriterId>;
 export type AccessorId = OwnerId | ReaderId | WriterId;
 
 export type FileRef = z.infer<typeof FileRef>;
+export type FileKind = z.infer<typeof FileKind>;
 export type FolderName = z.infer<typeof FolderName>;
-export type FolderType = z.infer<typeof FolderType>;
+export type FolderKind = z.infer<typeof FolderKind>;
 export type FolderAgg = z.infer<typeof FolderAgg>;
+export type ItemKind = z.infer<typeof ItemKind>;
 
 export type StorageRoot = z.infer<typeof StorageRoot>;
 // ============================= Schemas ============================= //
@@ -53,9 +55,11 @@ export const OwnerId = UUID.brand('OwnerId');
 export const ReaderId = UUID.brand('ReaderId');
 export const WriterId = UUID.brand('WriterId');
 
+export const FileKind = z.literal('application/vnd.file');
 export const FileRef = z
   .object({
     id: UUID,
+    kind: FileKind,
     name: FileName,
     size: BytesInteger,
     createdAt: z.date(),
@@ -71,7 +75,9 @@ export const FileRef = z
   .brand('File');
 
 const FolderName = z.string().min(1).max(255).brand('FolderName');
-const FolderType = z.literal('application/vnd.folder').brand('FolderType');
+const FolderKind = z.literal('application/vnd.folder');
+const ItemKind = z.union([FolderKind, FileKind]);
+
 export const FolderAgg = z
   .object({
     id: UUID,
@@ -79,8 +85,7 @@ export const FolderAgg = z
     size: BytesInteger,
 
     ownerId: OwnerId,
-    parentId: UUID.nullable(),
-    contentType: FolderType,
+    kind: FolderKind,
 
     // -- contents
     files: z.array(FileRef),

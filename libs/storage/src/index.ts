@@ -1,2 +1,3 @@
+export * from './domain';
+
 export * from './storage.module';
-export * from './storage.service';

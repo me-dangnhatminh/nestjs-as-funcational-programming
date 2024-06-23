@@ -35,3 +35,54 @@ model User {
   updatedAt DateTime? @db.Timestamp()
   removedAt DateTime? @db.Timestamp()
 }
+
+model FileRef {
+  id   String @id
+  name String
+  size BigInt
+
+  createdAt      DateTime
+  lastModifiedAt DateTime?
+  archivedAt     DateTime?
+
+  ownerId     String
+  contentType String
+  thumbnail   String?
+  description String?
+
+  belongsTo FolderContent? @relation("FolderContent")
+}
+
+model Folder {
+  id   String @id
+  name String
+  size BigInt
+
+  createdAt  DateTime
+  archivedAt DateTime?
+
+  ownerId String
+
+  content FolderContent[]  @relation("FolderContent")
+  nested  NestedSetFolder? @relation("NestedFolder")
+}
+
+model FolderContent {
+  id String @id
+
+  folderId String
+  fileId   String @unique
+
+  folder Folder  @relation("FolderContent", fields: [folderId], references: [id], onDelete: Cascade)
+  file   FileRef @relation("FolderContent", fields: [fileId], references: [id], onDelete: Cascade)
+}
+
+model NestedSetFolder {
+  id       String @id
+  folderId String @unique
+
+  lft Int
+  rgt Int
+
+  folder Folder @relation("NestedFolder", fields: [folderId], references: [id], onDelete: Cascade)
+}

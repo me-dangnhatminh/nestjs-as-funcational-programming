@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { FileRef } from './domain';
 
-@Injectable()
 export class StorageService {
   constructor() {}
+
+  addFile(file: FileRef) {}
 }
