@@ -19,15 +19,7 @@ export class StorageController {
   @Get()
   async getMyStorage() {
     const userId = `73285bb0-8715-4810-8574-ade024ba51e8`;
-    return await this.storageRepo.createRoot(userId, 'my-storage');
-  }
-
-  @Post()
-  @UseInterceptors(FileInterceptor('file'))
-  @Transactional()
-  async uploadToMyStorage() {
-    const userId = `73285bb0-8715-4810-8574-ade024ba51e8`;
-    const folder = {
+    const newFolder = {
       id: uuid(),
       name: 'my-storage',
       size: '0',
@@ -35,11 +27,33 @@ export class StorageController {
       createdAt: new Date(),
       archivedAt: null,
       rootId: userId,
-      depth: 1,
-      lft: 1,
-      rgt: 2,
     };
-    return await this.storageRepo.addFolder(folder);
+
+    const root = await this.storageRepo.getFolderById(userId);
+    return await this.storageRepo.addToFolder(newFolder, root);
+    // const userId = `73285bb0-8715-4810-8574-ade024ba51e8`;
+    // return await this.storageRepo.createRoot(userId, 'my-storage');
+  }
+
+  @Post()
+  @UseInterceptors(FileInterceptor('file'))
+  @Transactional()
+  async uploadToMyStorage() {
+    const userId = `73285bb0-8715-4810-8574-ade024ba51e8`;
+    const newFolder = {
+      id: uuid(),
+      name: 'my-storage',
+      size: '0',
+      ownerId: userId,
+      createdAt: new Date(),
+      archivedAt: null,
+      rootId: userId,
+    };
+
+    const root = await this.storageRepo.getFolderById(
+      '27c52156-8d94-4218-8141-5db0112f52e3',
+    );
+    return await this.storageRepo.addToFolder(newFolder, root);
   }
 }
 

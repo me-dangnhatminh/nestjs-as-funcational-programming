@@ -38,20 +38,20 @@ model User {
   @@map("users")
 }
 
-// ============= File System ============= //
+// =================================================================== //
+// =========================== FILE SYSTEM =========================== //
+// =================================================================== //
 model FileRef {
-  id   String @id @map("id")
-  name String @map("name")
-  size String @map("size")
-
+  id             String    @id @map("id")
+  name           String    @map("name")
+  size           String    @map("size")
+  ownerId        String    @map("owner_id")
   createdAt      DateTime  @map("created_at") @db.Timestamp()
   lastModifiedAt DateTime? @map("last_modified_at") @db.Timestamp()
+  contentType    String    @map("content_type")
+  thumbnail      String?   @map("thumbnail")
+  description    String?   @map("description")
   archivedAt     DateTime? @map("archived_at") @db.Timestamp()
-
-  ownerId     String  @map("owner_id")
-  contentType String  @map("content_type")
-  thumbnail   String? @map("thumbnail")
-  description String? @map("description")
 
   folder FileFolder?
 
@@ -59,34 +59,28 @@ model FileRef {
 }
 
 model Folder {
-  id   String @id @map("id")
-  name String @map("name")
-  size String @map("size")
-
+  id         String    @id @map("id")
+  name       String    @map("name")
+  size       String    @map("size")
   createdAt  DateTime  @map("created_at") @db.Timestamp()
   archivedAt DateTime? @map("archived_at") @db.Timestamp()
+  ownerId    String    @map("owner_id")
 
-  ownerId String @map("owner_id")
+  rootId String? @map("root_id")
+  depth  Int     @map("depth")
+  lft    Int     @map("lft")
+  rgt    Int     @map("rgt")
 
-  // nested set model and parent relation
-  rootId   String? @map("root_id")
-  parentId String? @map("parent_id")
-
-  lft Int @map("lft")
-  rgt Int @map("rgt")
-
-  folders Folder[]     @relation("RootFolder")
   files   FileFolder[]
-
-  root Folder? @relation("RootFolder", fields: [rootId], references: [id], onDelete: Cascade)
+  folders Folder[]     @relation("RootFolder")
+  root    Folder?      @relation("RootFolder", fields: [rootId], references: [id])
 
   @@index([lft, rgt])
   @@map("folders")
 }
 
 model FileFolder {
-  id String @id @map("id")
-
+  id       String @id @map("id")
   folderId String @map("folder_id")
   fileId   String @unique @map("file_id")
 
@@ -94,14 +88,4 @@ model FileFolder {
   file   FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@map("file_folders")
-}
-
-model Storage {
-  id   String @id @map("id")
-  type String @map("type")
-
-  ownerId    String    @map("owner_id")
-  archivedAt DateTime? @map("archived_at") @db.Timestamp()
-
-  @@map("storages")
 }
