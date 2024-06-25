@@ -18,68 +18,90 @@ enum Provider {
 }
 
 model User {
-  id         String    @id
-  email      String?   @unique
-  name       String?
-  password   String?
-  role       UserRole  @default(user)
-  provider   Provider
-  providerId String?
-  verifiedAt DateTime? @db.Timestamp()
+  id         String    @id @map("id")
+  email      String?   @unique @map("email")
+  name       String?   @map("name")
+  password   String?   @map("password")
+  role       UserRole  @map("role")
+  provider   Provider  @map("provider")
+  providerId String?   @map("provider_id")
+  verifiedAt DateTime? @map("verified_at") @db.Timestamp()
 
-  firstName String?
-  lastName  String?
-  avatarUrl String?
+  firstName String? @map("first_name")
+  lastName  String? @map("last_name")
+  avatarUrl String? @map("avatar_url")
 
-  createdAt DateTime  @db.Timestamp()
-  updatedAt DateTime? @db.Timestamp()
-  removedAt DateTime? @db.Timestamp()
+  createdAt DateTime  @map("created_at") @db.Timestamp()
+  updatedAt DateTime? @map("updated_at") @db.Timestamp()
+  removedAt DateTime? @map("removed_at") @db.Timestamp()
+
+  @@map("users")
 }
 
+// ============= File System ============= //
 model FileRef {
-  id   String @id
-  name String
-  size BigInt
+  id   String @id @map("id")
+  name String @map("name")
+  size String @map("size")
 
-  createdAt      DateTime
-  lastModifiedAt DateTime?
-  archivedAt     DateTime?
+  createdAt      DateTime  @map("created_at") @db.Timestamp()
+  lastModifiedAt DateTime? @map("last_modified_at") @db.Timestamp()
+  archivedAt     DateTime? @map("archived_at") @db.Timestamp()
 
-  ownerId     String
-  contentType String
-  thumbnail   String?
-  description String?
+  ownerId     String  @map("owner_id")
+  contentType String  @map("content_type")
+  thumbnail   String? @map("thumbnail")
+  description String? @map("description")
 
-  parent FileFolder?
+  folder FileFolder?
+
+  @@map("files")
 }
 
 model Folder {
-  id   String @id
-  name String
-  size BigInt
+  id   String @id @map("id")
+  name String @map("name")
+  size String @map("size")
 
-  createdAt  DateTime
-  archivedAt DateTime?
+  createdAt  DateTime  @map("created_at") @db.Timestamp()
+  archivedAt DateTime? @map("archived_at") @db.Timestamp()
 
-  ownerId String
+  ownerId String @map("owner_id")
 
   // nested set model and parent relation
-  lft      Int     @default(0)
-  rgt      Int     @default(0)
-  parentId String?
+  rootId   String? @map("root_id")
+  parentId String? @map("parent_id")
 
-  parent  Folder?  @relation("ParentFolder", fields: [parentId], references: [id])
-  folders Folder[] @relation("ParentFolder")
+  lft Int @map("lft")
+  rgt Int @map("rgt")
 
-  files FileFolder[]
+  folders Folder[]     @relation("RootFolder")
+  files   FileFolder[]
+
+  root Folder? @relation("RootFolder", fields: [rootId], references: [id], onDelete: Cascade)
+
+  @@index([lft, rgt])
+  @@map("folders")
 }
 
 model FileFolder {
-  id String @id
+  id String @id @map("id")
 
-  folderId String
-  fileId   String @unique
+  folderId String @map("folder_id")
+  fileId   String @unique @map("file_id")
 
   folder Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   file   FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@map("file_folders")
+}
+
+model Storage {
+  id   String @id @map("id")
+  type String @map("type")
+
+  ownerId    String    @map("owner_id")
+  archivedAt DateTime? @map("archived_at") @db.Timestamp()
+
+  @@map("storages")
 }

@@ -14,31 +14,30 @@ export class UserRepository implements IUserRepository {
     >, // TODO: fix this type
   ) {}
 
+  private get tx() {
+    return this.txHost.tx as PrismaClient;
+  }
+
   findById(id: string): Promise<User | null> {
-    const userRepo = this.txHost.tx as PrismaClient;
-    return userRepo.user.findUnique({ where: { id: id } }) as any;
+    return this.tx.user.findUnique({ where: { id: id } }) as any;
   }
 
   findByEmail(email: EmailAddress): Promise<User | null> {
-    const userRepo = this.txHost.tx as PrismaClient;
-    return userRepo.user.findUnique({ where: { email: email } }) as any;
+    return this.tx.user.findUnique({ where: { email: email } }) as any;
   }
 
   add(user: User): Promise<void> {
-    const userRepo = this.txHost.tx as PrismaClient;
     const data = user as unknown as PrismaUser;
-    return userRepo.user.create({ data }) as any;
+    return this.tx.user.create({ data }) as any;
   }
 
   update(user: User): Promise<void> {
-    const userRepo = this.txHost.tx as PrismaClient;
     const data = user as unknown as PrismaUser;
-    return userRepo.user.update({ where: { id: user.id }, data }) as any;
+    return this.tx.user.update({ where: { id: user.id }, data }) as any;
   }
 
   remove(user: User): Promise<void> {
-    const userRepo = this.txHost.tx as PrismaClient;
-    return userRepo.user.delete({ where: { id: user.id } }) as any;
+    return this.tx.user.delete({ where: { id: user.id } }) as any;
   }
 }
 

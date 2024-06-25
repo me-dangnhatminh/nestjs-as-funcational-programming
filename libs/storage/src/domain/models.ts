@@ -20,12 +20,12 @@ export type FileRef = z.infer<typeof FileRef>;
 export type FileKind = z.infer<typeof FileKind>;
 export type FolderName = z.infer<typeof FolderName>;
 export type FolderKind = z.infer<typeof FolderKind>;
-export type FolderAgg = z.infer<typeof FolderAgg>;
+// export type FolderAgg = z.infer<typeof FolderAgg>;
 export type ItemKind = z.infer<typeof ItemKind>;
 
 export type StorageRoot = z.infer<typeof StorageRoot>;
 // ============================= Schemas ============================= //
-export const Integer = z.number().int();
+export const Integer = z.bigint();
 export const ByteUnit = z.literal('B').brand('ByteUnit');
 export const Bytes = z
   .string()
@@ -59,7 +59,6 @@ export const FileKind = z.literal('application/vnd.file');
 export const FileRef = z
   .object({
     id: UUID,
-    kind: FileKind,
     name: FileName,
     size: BytesInteger,
     createdAt: z.date(),
@@ -78,27 +77,43 @@ const FolderName = z.string().min(1).max(255).brand('FolderName');
 const FolderKind = z.literal('application/vnd.folder');
 const ItemKind = z.union([FolderKind, FileKind]);
 
-export const FolderAgg = z
-  .object({
-    id: UUID,
-    name: FolderName,
-    size: BytesInteger,
+const InternalFolder = z.object({
+  id: UUID,
+  name: FolderName,
+  size: BytesInteger,
+  createdAt: z.date(),
+  archivedAt: z.date().nullable().default(null),
+  files: z.array(FileRef),
+});
+type InternalFolder = z.infer<typeof InternalFolder> & {
+  folders: z.infer<typeof FolderAgg>;
+};
+export const FolderAgg = InternalFolder.extend({
+  folders: z.array(z.lazy(() => FolderAgg)),
+}).brand('FolderAgg');
+export type FolderAgg = InternalFolder;
 
-    ownerId: OwnerId,
-    kind: FolderKind,
+// z
+//   .object({
+//     id: UUID,
+//     name: FolderName,
+//     size: BytesInteger,
+//     ownerId: OwnerId,
 
-    // -- contents
-    files: z.array(FileRef),
-    folderIds: z.array(UUID),
-  })
-  .brand('FolderAgg');
+//     createdAt: z.date().default(() => new Date()),
+//     archivedAt: z.date().nullable().default(null),
+
+//     // -- contents
+//     files: z.array(FileRef),
+//     folders:
+//   })
+//   .brand('FolderAgg');
 
 export const StorageRoot = z
   .object({
     id: UUID,
     totalSpace: BytesInteger,
     usedSpace: BytesInteger,
-    ref: FolderAgg,
   })
   .refine((val) => val.totalSpace - val.usedSpace >= 0, {
     message: 'Used space should not be greater than total space',
