@@ -5,20 +5,26 @@ import { Folder, PrismaClient } from '@prisma/client';
 
 // implement mapper
 
-const createRoot = (ownerId: string, type: 'my-storage') =>
+const createRoot = (ownerId: string, type: 'my-storage'): Folder =>
   Object.freeze({
     id: ownerId,
     name: type,
-    ownerId: ownerId,
-    size: '0',
+    size: BigInt(0),
     createdAt: new Date(),
+    modifiedAt: null,
     archivedAt: null,
+    // -- custom metadata
+    ownerId: ownerId,
+    pinnedAt: null,
+    // -- hierarchy
     rootId: null,
+    parentId: null,
     depth: 0,
     lft: 0,
     rgt: 1,
   });
 
+type InsertFolder = Omit<Folder, 'lft' | 'rgt' | 'depth' | 'parentId'>;
 @Injectable()
 export class StorageRepository {
   constructor(
@@ -43,7 +49,7 @@ export class StorageRepository {
   }
 
   // =============== WRITE SIDE =============== //
-  async upsertRoot(ownerId: string, type: 'my-storage') {
+  async upsertRoot(ownerId: string, type: 'my-storage' = 'my-storage') {
     const tx = this.txHost.tx as PrismaClient;
     return tx.folder.upsert({
       where: { id: ownerId },
@@ -58,38 +64,47 @@ export class StorageRepository {
     return tx.folder.create({ data: root });
   }
 
-  async addFolder(item: Omit<Folder, 'lft' | 'rgt' | 'depth'>, folder: Folder) {
+  async addFolder(item: InsertFolder, folder: Folder) {
     const tx = this.txHost.tx as PrismaClient;
-
-    const isRoot = folder.rootId === folder.id;
-    const rootId = folder.rootId ?? folder.id;
     // extend root
+    const rootId = folder.rootId ?? folder.id;
     await tx.folder.update({
-      where: { id: rootId, rootId: { equals: null }, lft: 0, depth: 0 },
+      where: {
+        id: rootId,
+        rootId: { equals: null },
+        parentId: { equals: null },
+        lft: 0,
+        depth: 0,
+      },
       data: { rgt: { increment: 2 } },
     });
 
-    // extend parent
-    if (!isRoot) {
-      tx.folder.updateMany({
+    // extend right siblings
+    const notRoot = folder.rootId !== folder.id;
+    if (notRoot) {
+      await tx.folder.updateMany({
         where: { rootId, rgt: { gt: folder.rgt } },
         data: { rgt: { increment: 2 } },
       });
-
-      tx.folder.updateMany({
+      await tx.folder.updateMany({
         where: { rootId, lft: { gt: folder.rgt } },
         data: { lft: { increment: 2 } },
       });
     }
 
-    const lft = folder.rgt;
-    const rgt = folder.rgt + 1;
-    const depth = folder.depth + 1;
-    const data: Folder = Object.assign({}, item, { lft, rgt, depth, rootId });
+    // -- insert new folder
+    const data: Folder = Object.assign({}, item, {
+      rootId: rootId,
+      parentId: folder.id,
+      lft: folder.rgt,
+      rgt: folder.rgt + 1,
+      depth: folder.depth + 1,
+      archivedAt: folder.archivedAt,
+    });
     return tx.folder.create({ data });
   }
 
-  async softDeleteDep(folder: Folder) {
+  async softDelete(folder: Folder) {
     const tx = this.txHost.tx as PrismaClient;
     const archivedAt = new Date();
     return tx.folder.updateMany({
@@ -102,7 +117,7 @@ export class StorageRepository {
     });
   }
 
-  async restoreDep(folder: Folder) {
+  async restore(folder: Folder) {
     const tx = this.txHost.tx as PrismaClient;
     return tx.folder.updateMany({
       where: {
@@ -114,17 +129,10 @@ export class StorageRepository {
     });
   }
 
-  async hardDeleteDep(folder: Folder) {
+  async hardDelete(folder: Folder) {
     const tx = this.txHost.tx as PrismaClient;
-    const removed = await tx.folder.deleteMany({
-      where: {
-        rootId: folder.rootId,
-        lft: { gte: folder.lft },
-        rgt: { lte: folder.rgt },
-      },
-    });
+    const removed = tx.folder.delete({ where: folder });
 
-    const isRoot = folder.rootId === folder.id;
     const rootId = folder.rootId ?? folder.id;
     const diff = folder.rgt - folder.lft + 1;
 
@@ -135,7 +143,8 @@ export class StorageRepository {
     });
 
     // extend parent
-    if (!isRoot) {
+    const notRoot = folder.rootId !== folder.id;
+    if (notRoot) {
       tx.folder.updateMany({
         where: { rootId, rgt: { gt: folder.rgt } },
         data: { rgt: { decrement: diff } },

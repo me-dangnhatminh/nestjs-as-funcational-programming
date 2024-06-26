@@ -68,7 +68,7 @@ model FileRef {
 model Folder {
   id         String    @id @map("id")
   name       String    @map("name")
-  size       String    @map("size")
+  size       BigInt    @map("size")
   createdAt  DateTime  @map("created_at")
   modifiedAt DateTime? @map("modified_at")
   archivedAt DateTime? @map("archived_at")
@@ -88,8 +88,8 @@ model Folder {
   files   FileInFolder[] // @relation("FileInFolder")
   folders Folder[]       @relation("ParentChild")
 
-  parent    Folder?  @relation("ParentChild", fields: [parentId], references: [id])
-  root      Folder?  @relation("RootFlatChild", fields: [rootId], references: [id])
+  parent    Folder?  @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
+  root      Folder?  @relation("RootFlatChild", fields: [rootId], references: [id], onDelete: Cascade)
   flatChild Folder[] @relation("RootFlatChild")
 
   @@index([lft, rgt])
