@@ -93,22 +93,6 @@ export const FolderAgg = InternalFolder.extend({
 }).brand('FolderAgg');
 export type FolderAgg = InternalFolder;
 
-// z
-//   .object({
-//     id: UUID,
-//     name: FolderName,
-//     size: BytesInteger,
-//     ownerId: OwnerId,
-
-//     createdAt: z.date().default(() => new Date()),
-//     archivedAt: z.date().nullable().default(null),
-
-//     // -- contents
-//     files: z.array(FileRef),
-//     folders:
-//   })
-//   .brand('FolderAgg');
-
 export const StorageRoot = z
   .object({
     id: UUID,

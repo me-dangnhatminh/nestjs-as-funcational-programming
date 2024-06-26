@@ -13,9 +13,9 @@ const FileRef = (
   name: string,
   size: number,
   type: string,
+  id: string = uuid(),
   createdAt: Date = new Date(),
   updatedAt: Date | null = null,
   removedAt: Date | null = null,
-  id: string = uuid(),
 ): FileRef =>
   Object.freeze({ id, name, size, type, createdAt, updatedAt, removedAt });

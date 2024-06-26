@@ -7,6 +7,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// =================================================================== //
+// =========================== AUTHENTICATION ======================== //
+// =================================================================== //
 enum UserRole {
   admin
   user
@@ -19,22 +22,23 @@ enum Provider {
 
 model User {
   id         String    @id @map("id")
-  email      String?   @unique @map("email")
+  email      String?   @map("email")
   name       String?   @map("name")
   password   String?   @map("password")
   role       UserRole  @map("role")
   provider   Provider  @map("provider")
   providerId String?   @map("provider_id")
-  verifiedAt DateTime? @map("verified_at") @db.Timestamp()
+  verifiedAt DateTime? @map("verified_at")
 
   firstName String? @map("first_name")
   lastName  String? @map("last_name")
   avatarUrl String? @map("avatar_url")
 
-  createdAt DateTime  @map("created_at") @db.Timestamp()
-  updatedAt DateTime? @map("updated_at") @db.Timestamp()
-  removedAt DateTime? @map("removed_at") @db.Timestamp()
+  createdAt DateTime  @map("created_at")
+  updatedAt DateTime? @map("updated_at")
+  removedAt DateTime? @map("removed_at")
 
+  @@unique([email, providerId])
   @@map("users")
 }
 
@@ -42,18 +46,21 @@ model User {
 // =========================== FILE SYSTEM =========================== //
 // =================================================================== //
 model FileRef {
-  id             String    @id @map("id")
-  name           String    @map("name")
-  size           String    @map("size")
-  ownerId        String    @map("owner_id")
-  createdAt      DateTime  @map("created_at") @db.Timestamp()
-  lastModifiedAt DateTime? @map("last_modified_at") @db.Timestamp()
-  contentType    String    @map("content_type")
-  thumbnail      String?   @map("thumbnail")
-  description    String?   @map("description")
-  archivedAt     DateTime? @map("archived_at") @db.Timestamp()
+  id         String    @id @map("id")
+  name       String    @map("name")
+  size       BigInt    @map("size")
+  createdAt  DateTime  @map("created_at")
+  modifiedAt DateTime? @map("modified_at")
+  archivedAt DateTime? @map("archived_at")
 
-  folder FileFolder?
+  // -- cutom metadata
+  ownerId     String    @map("owner_id")
+  pinnedAt    DateTime? @map("pinned_at")
+  contentType String    @map("content_type")
+  thumbnail   String?   @map("thumbnail")
+  description String?   @map("description")
+
+  folder FileInFolder[]
 
   @@map("files")
 }
@@ -62,30 +69,41 @@ model Folder {
   id         String    @id @map("id")
   name       String    @map("name")
   size       String    @map("size")
-  createdAt  DateTime  @map("created_at") @db.Timestamp()
-  archivedAt DateTime? @map("archived_at") @db.Timestamp()
-  ownerId    String    @map("owner_id")
+  createdAt  DateTime  @map("created_at")
+  modifiedAt DateTime? @map("modified_at")
+  archivedAt DateTime? @map("archived_at")
 
-  rootId String? @map("root_id")
-  depth  Int     @map("depth")
-  lft    Int     @map("lft")
-  rgt    Int     @map("rgt")
+  // -- cutom metadata
+  ownerId  String    @map("owner_id")
+  pinnedAt DateTime? @map("pinned_at")
 
-  files   FileFolder[]
-  folders Folder[]     @relation("RootFolder")
-  root    Folder?      @relation("RootFolder", fields: [rootId], references: [id])
+  // -- hierarchy and parent-child
+  rootId   String? @map("root_id")
+  parentId String? @map("parent_id")
+  depth    Int     @map("depth")
+  lft      Int     @map("lft")
+  rgt      Int     @map("rgt")
+
+  // -- content
+  files   FileInFolder[] // @relation("FileInFolder")
+  folders Folder[]       @relation("ParentChild")
+
+  parent    Folder?  @relation("ParentChild", fields: [parentId], references: [id])
+  root      Folder?  @relation("RootFlatChild", fields: [rootId], references: [id])
+  flatChild Folder[] @relation("RootFlatChild")
 
   @@index([lft, rgt])
-  @@map("folders")
+  @@map("folder_hierarchy")
 }
 
-model FileFolder {
+model FileInFolder {
   id       String @id @map("id")
   folderId String @map("folder_id")
-  fileId   String @unique @map("file_id")
+  fileId   String @map("file_id")
 
   folder Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   file   FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
-  @@map("file_folders")
+  @@unique([fileId])
+  @@map("file_in_folder")
 }

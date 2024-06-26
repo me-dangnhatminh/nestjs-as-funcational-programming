@@ -38,5 +38,3 @@ export const Tree = {
   findPre,
   add,
 } as const;
-
-// implement builder pattern
