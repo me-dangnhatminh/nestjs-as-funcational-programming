@@ -36,7 +36,7 @@ const addFile = (...parms: AddFileParams): AddFileResult => {
   const free = root.totalSpace - root.usedSpace;
   const isEnoughSpace = free >= file.size;
   if (isEnoughSpace) return E.left(ErrorTypes.NotEnoughSpace);
-  const folderId = root.ref.id;
+  const folderId = root.id;
   return E.right([AddFileEvent({ folderId, file })]);
 };
 
@@ -56,7 +56,7 @@ const removeFile = (
   const [root, acessorId, fileId] = parms;
   const isOwner = isOwnerOf(root, acessorId);
   if (!isOwner) return E.left(ErrorTypes.NotPermitted);
-  const folderId = root.ref.id;
+  const folderId = root.id;
   const event = FileRemovedEvent({ folderId, fileId });
   return E.right([event]);
 };

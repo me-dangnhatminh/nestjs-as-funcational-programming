@@ -70,7 +70,10 @@ CREATE TABLE "file_in_folder" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_provider_id_key" ON "users"("email", "provider_id");
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_provider_id_key" ON "users"("provider_id");
 
 -- CreateIndex
 CREATE INDEX "folder_hierarchy_lft_rgt_idx" ON "folder_hierarchy"("lft", "rgt");
@@ -79,10 +82,10 @@ CREATE INDEX "folder_hierarchy_lft_rgt_idx" ON "folder_hierarchy"("lft", "rgt");
 CREATE UNIQUE INDEX "file_in_folder_file_id_key" ON "file_in_folder"("file_id");
 
 -- AddForeignKey
-ALTER TABLE "folder_hierarchy" ADD CONSTRAINT "folder_hierarchy_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "folder_hierarchy"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "folder_hierarchy" ADD CONSTRAINT "folder_hierarchy_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "folder_hierarchy"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "folder_hierarchy" ADD CONSTRAINT "folder_hierarchy_root_id_fkey" FOREIGN KEY ("root_id") REFERENCES "folder_hierarchy"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "folder_hierarchy" ADD CONSTRAINT "folder_hierarchy_root_id_fkey" FOREIGN KEY ("root_id") REFERENCES "folder_hierarchy"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "file_in_folder" ADD CONSTRAINT "file_in_folder_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "folder_hierarchy"("id") ON DELETE CASCADE ON UPDATE CASCADE;

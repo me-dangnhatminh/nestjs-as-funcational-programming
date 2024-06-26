@@ -22,12 +22,12 @@ enum Provider {
 
 model User {
   id         String    @id @map("id")
-  email      String?   @map("email")
+  email      String?   @unique @map("email")
   name       String?   @map("name")
   password   String?   @map("password")
   role       UserRole  @map("role")
   provider   Provider  @map("provider")
-  providerId String?   @map("provider_id")
+  providerId String?   @unique @map("provider_id")
   verifiedAt DateTime? @map("verified_at")
 
   firstName String? @map("first_name")
@@ -38,7 +38,6 @@ model User {
   updatedAt DateTime? @map("updated_at")
   removedAt DateTime? @map("removed_at")
 
-  @@unique([email, providerId])
   @@map("users")
 }
 
@@ -99,11 +98,10 @@ model Folder {
 model FileInFolder {
   id       String @id @map("id")
   folderId String @map("folder_id")
-  fileId   String @map("file_id")
+  fileId   String @unique @map("file_id")
 
   folder Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   file   FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
-  @@unique([fileId])
   @@map("file_in_folder")
 }

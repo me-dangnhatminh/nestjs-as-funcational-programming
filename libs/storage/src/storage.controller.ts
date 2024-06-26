@@ -1,49 +1,27 @@
-import { Controller, Get, Post, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { StorageRepository } from './storage.repository';
 import { Transactional } from '@nestjs-cls/transactional';
 
+import { Authenticated } from '@app/auth';
+import { diskStorage } from './adapters';
+import { StorageRepository } from './storage.repository';
+
 @Controller('my-storage')
+@UseGuards(Authenticated)
 export class StorageController {
   constructor(private readonly storageRepo: StorageRepository) {}
 
-  // get list
-  @Get()
-  async getMyStorage() {
-    // const userId = `73285bb0-8715-4810-8574-ade024ba51e8`;
-    // const newFolder = {
-    //   id: uuid(),
-    //   name: 'my-storage',
-    //   size: '0',
-    //   ownerId: userId,
-    //   createdAt: new Date(),
-    //   archivedAt: null,
-    //   rootId: userId,
-    // };
-    // const root = await this.storageRepo.getFolderById(userId);
-    // return await this.storageRepo.addToFolder(newFolder, root);
-    // const userId = `73285bb0-8715-4810-8574-ade024ba51e8`;
-    // return await this.storageRepo.createRoot(userId, 'my-storage');
-  }
-
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { storage: diskStorage }))
   @Transactional()
-  async uploadToMyStorage() {
-    // const userId = `73285bb0-8715-4810-8574-ade024ba51e8`;
-    // const newFolder = {
-    //   id: uuid(),
-    //   name: 'my-storage',
-    //   size: '0',
-    //   ownerId: userId,
-    //   createdAt: new Date(),
-    //   archivedAt: null,
-    //   rootId: userId,
-    // };
-    // const root = await this.storageRepo.getFolderById(
-    //   '27c52156-8d94-4218-8141-5db0112f52e3',
-    // );
-    // return await this.storageRepo.addToFolder(newFolder, root);
+  async uploadToMyStorage(@UploadedFile() file: Express.Multer.FileExt) {
+    console.log('file', file);
   }
 }
 

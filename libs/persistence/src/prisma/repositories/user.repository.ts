@@ -22,8 +22,10 @@ export class UserRepository implements IUserRepository {
     return this.tx.user.findUnique({ where: { id: id } }) as any;
   }
 
-  findByEmail(email: EmailAddress): Promise<User | null> {
-    return this.tx.user.findUnique({ where: { email: email } }) as any;
+  findByEmail(email: string): Promise<User | null> {
+    return this.tx.user.findUnique({
+      where: { email: email },
+    }) as any;
   }
 
   add(user: User): Promise<void> {
