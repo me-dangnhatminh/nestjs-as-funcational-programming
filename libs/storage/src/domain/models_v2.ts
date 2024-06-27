@@ -1,25 +1,25 @@
 import * as z from 'zod';
 
 const UUID = z.string().uuid();
-const Bytes = z.number().min(0);
+const Bytes = z.number().int().min(0).brand('Bytes');
+const OwnerId = UUID.brand('OwnerId');
 
 export const FileRef = z.object({
   id: UUID,
+  ownerId: UUID,
   name: z.string(),
   size: Bytes,
-
   contentType: z.string(),
-  ownerId: UUID,
-
   createdAt: z.date(),
-  lastModifiedAt: z.date().nullable(),
+  pinnedAt: z.date().nullable(),
+  modifiedAt: z.date().nullable(),
   archivedAt: z.date().nullable(),
 });
 
 export const FolderAgg = z.object({
   id: UUID,
   name: z.string(),
-  ownerId: UUID,
+  ownerId: OwnerId,
   size: Bytes,
 
   files: z.lazy(() => z.array(FileRef)),

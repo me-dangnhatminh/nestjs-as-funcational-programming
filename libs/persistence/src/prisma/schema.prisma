@@ -96,12 +96,10 @@ model Folder {
 }
 
 model FileInFolder {
-  id       String @id @map("id")
-  folderId String @map("folder_id")
-  fileId   String @unique @map("file_id")
-
-  folder Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  file   FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId   String  @id @map("file_id")
+  folderId String  @map("folder_id")
+  folder   Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  file     FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   @@map("file_in_folder")
 }

@@ -11,8 +11,9 @@ import {
 import { Request, RequestWithUser } from 'express';
 import * as RxJs from 'rxjs';
 import { v4 as uuid } from 'uuid';
+import { FileRef } from '../domain';
 
-const DIST_PREFIX = 'uploads';
+const DIST_PREFIX = 'dist/uploads';
 const ROLLBACK_EVENT = 'UPLOAD_FAILED';
 
 export const diskStorage = multer.diskStorage({
@@ -28,19 +29,21 @@ export const diskStorage = multer.diskStorage({
     const filename = `${id}`;
     const fullpath = path.join(destination, filename);
 
-    Object.assign(file, {
-      id: id,
-      ownerId: req.user.id,
+    const extend: FileRef = {
+      id: id as any,
       name: file.originalname,
-      contentType: file.mimetype,
+      size: file.size as any,
       createdAt: new Date(),
-      lastModifiedAt: null,
+      modifiedAt: null,
       archivedAt: null,
-
+      ownerId: req.user.id as any,
+      contentType: file.mimetype,
       thumbnail: null,
+      description: null,
+    };
 
-      path: fullpath,
-    });
+    file.path = fullpath;
+    file.extended = extend;
 
     const rollback = () => req.on(ROLLBACK_EVENT, () => fs.unlink(file.path));
     file.stream.on('end', rollback);
