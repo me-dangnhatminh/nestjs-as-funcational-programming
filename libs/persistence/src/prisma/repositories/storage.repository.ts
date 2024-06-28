@@ -5,7 +5,7 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import * as Orm from '@prisma/client';
 import * as Domain from '@app/storage';
 
-import { createFolder, createRoot, FileMapper, FolderMapper } from '../mappers';
+import { createRoot, FileMapper, FolderMapper } from '../mappers';
 
 type InsertFolder = Omit<Orm.Folder, 'lft' | 'rgt' | 'depth'>;
 @Injectable()
@@ -16,6 +16,10 @@ export class StorageRepository implements Domain.IStorageRepository {
     >,
   ) {}
 
+  addFolder(item: Domain.Folder, parent: Domain.Folder): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   // async getFolderLazy(id: string): Promise<Domain.Folder | null> {
   //   if (!id) return null;
   //   const tx = this.txHost.tx as Orm.PrismaClient;
@@ -24,63 +28,6 @@ export class StorageRepository implements Domain.IStorageRepository {
   //   const folderDomain = FolderMapper.toDomain(folder);
   //   return this.createLazyLoadingProxy(folderDomain, id);
   // }
-
-  async addFolder(item: Domain.Folder, parent: Domain.Folder): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-
-  async ramdom() {
-    const tx = this.txHost.tx as Orm.PrismaClient;
-    const ownerId = '114b686b-ebb7-426e-ad18-1c82198f1422';
-    const parent = await tx.folder.findUniqueOrThrow({
-      where: { id: ownerId },
-    });
-
-    const items = Array.from({ length: 1000 }, (_, i) =>
-      createFolder(
-        ownerId,
-        `Folder ${i}`,
-        '2399e377-d0b8-4ff7-9424-f7d55b2f3148',
-      ),
-    );
-    await this.addFolders(items as InsertFolder[], parent);
-  }
-
-  getFolderLazy(id: string): Promise<Domain.Folder | null> {
-    const tx = this.txHost.tx as Orm.PrismaClient;
-    return tx.folder
-      .findUnique({ where: { id } })
-      .then((f) => (f ? FolderMapper.toDomain(f) : null))
-      .then((folder) => {
-        if (!folder) return null;
-        return new Proxy(folder, {
-          get: (target, prop: keyof Domain.Folder) => {
-            if (prop === 'folders') return this.getContentLazy(folder.id);
-            return Reflect.get(target, prop);
-          },
-        });
-      });
-  }
-
-  async getContentLazy(parentId: string) {
-    const tx = this.txHost.tx as Orm.PrismaClient;
-    const folder = await tx.folder.findMany({ where: { parentId } });
-    let isLoad = false;
-    return folder.map(
-      (f) =>
-        new Proxy(FolderMapper.toDomain(f), {
-          get: (target, prop: keyof Domain.Folder) => {
-            if (prop === 'folders') {
-              if (!isLoad) {
-                isLoad = true;
-                return this.getContentLazy(f.id);
-              }
-            }
-            return Reflect.get(target, prop);
-          },
-        }),
-    );
-  }
 
   // =============== Write Side =============== //
   getFileRef(id: string): Promise<Domain.FileRef | null> {

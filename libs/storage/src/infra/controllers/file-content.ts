@@ -40,7 +40,7 @@ export class FileContentUseCase {
     if (!valid) throw new BadRequestException("File doesn't exist");
     // --------------------------------------------------
 
-    const filePath = this.storageService.getContent(valid);
+    const filePath = this.storageService.getFilePath(valid);
     if (!filePath) {
       await this.storageService.hardRemoveFile(valid); // side effect
       throw new BadRequestException("File doesn't exist");

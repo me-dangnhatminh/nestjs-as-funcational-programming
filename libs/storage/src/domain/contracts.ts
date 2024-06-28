@@ -9,9 +9,6 @@ export abstract class IStorageRepository {
   abstract addFiles(items: FileRef[], folder: Folder): Promise<void>;
   abstract hardRemoveFile(item: FileRef): Promise<void>;
 
-  // abstract getFolderLazy(id: string): Promise<Folder | null>;
-  abstract getContentLazy(parentId: string): Promise<Folder[]>;
-  abstract getFolderLazy(id: string): Promise<Folder | null>;
   abstract addFolder(item: Folder, parent: Folder): Promise<void>;
 }
 
