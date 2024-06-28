@@ -3,15 +3,13 @@ import { Injectable, Provider } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
-import { EmailAddress, IUserRepository, User } from '@app/auth/domain';
+import { IUserRepository, User } from '@app/auth/domain';
 import { PrismaClient, User as PrismaUser } from '@prisma/client';
 
 @Injectable()
 export class UserRepository implements IUserRepository {
   constructor(
-    private readonly txHost: TransactionHost<
-      TransactionalAdapterPrisma<PrismaClient>
-    >, // TODO: fix this type
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
   ) {}
 
   private get tx() {

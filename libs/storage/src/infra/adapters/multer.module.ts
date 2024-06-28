@@ -11,7 +11,7 @@ import {
 import { Request, RequestWithUser } from 'express';
 import * as RxJs from 'rxjs';
 import { v4 as uuid } from 'uuid';
-import { FileRef } from '../domain';
+import { FileRef } from '../../domain';
 
 const DIST_PREFIX = 'dist/uploads';
 const ROLLBACK_EVENT = 'UPLOAD_FAILED';
@@ -36,6 +36,7 @@ export const diskStorage = multer.diskStorage({
       createdAt: new Date(),
       modifiedAt: null,
       archivedAt: null,
+      pinnedAt: null,
       ownerId: req.user.id as any,
       contentType: file.mimetype,
       thumbnail: null,

@@ -1,12 +1,21 @@
-import { Module } from '@nestjs/common';
-import { StorageController } from './storage.controller';
+import { Global, Module } from '@nestjs/common';
 
-import { FirebaseModule } from './adapters';
-import { StorageRepository } from './storage.repository';
+import { services } from './application';
+import { controllers } from './infra';
 
+@Global()
 @Module({
-  imports: [FirebaseModule],
-  providers: [StorageRepository],
-  controllers: [StorageController],
+  controllers: controllers,
+  providers: services,
 })
 export class StorageModule {}
+
+// =================================
+// TODO: move to a separate file
+// this is BigInt serialization for JSON (error)
+Object.assign(BigInt.prototype, {
+  toJSON() {
+    return this.toString();
+  },
+});
+// =================================
