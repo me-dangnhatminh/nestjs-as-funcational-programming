@@ -13,13 +13,10 @@ import {
 export type HardRemoveFileCmd = PermissionWrapper<Owner | Admin, FileRef, null>;
 export type AddFileCmd = PermissionWrapper<Owner | Admin, Folder, FileRef>;
 export type AddFilesCmd = PermissionWrapper<Owner | Admin, Folder, FileRef[]>;
-
 export type GetFilePathQ = PermissionWrapper<Owner | Admin, FileRef, null>;
-export type GetFolderContentQ = PermissionWrapper<
-  Owner | Admin,
-  FolderInfo,
-  { depth: number; isFlat: boolean }
->;
+export type GetFolderContentQ = PermissionWrapper<Owner | Admin, FolderInfo>;
+
+export type AddFolderCmd = PermissionWrapper<Owner | Admin, Folder, FolderInfo>;
 
 @Injectable()
 export class StorageService {
@@ -27,6 +24,10 @@ export class StorageService {
     private readonly diskStorage: IDiskStorage,
     private readonly storageRepo: IStorageRepository,
   ) {}
+
+  addFolder(cmd: AddFolderCmd) {
+    return this.storageRepo.addFolder(cmd.meta, cmd.resource);
+  }
 
   getFilePath(q: GetFilePathQ) {
     return this.diskStorage.getPath(q.resource);

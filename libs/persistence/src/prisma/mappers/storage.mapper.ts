@@ -66,19 +66,8 @@ export const FileMapper = {
 
 export const FolderMapper = {
   toDomain: (orm: Orm.Folder): Domain.Folder =>
-    Domain.Folder.parse(Object.assign(orm, { size: Number(orm.size) })),
-  toOrm: (
-    domain: Domain.Folder,
-    extra: {
-      createdAt: Date;
-      modifiedAt: Date | null;
-      parentId: string | null;
-      rootId: string;
-      lft: number;
-      rgt: number;
-      depth: number;
-    },
-  ): Orm.Folder =>
+    Domain.Folder.parse({ ...orm, size: Number(orm.size) }),
+  toOrm: (domain: Domain.Folder): Orm.Folder =>
     Object.freeze({
       id: domain.id,
       size: BigInt(domain.size),
@@ -89,10 +78,10 @@ export const FolderMapper = {
       modifiedAt: domain.modifiedAt,
       pinnedAt: domain.pinnedAt,
       // -- different
-      rootId: extra.rootId,
-      parentId: extra.parentId,
-      lft: extra.lft,
-      rgt: extra.rgt,
-      depth: extra.depth,
+      rootId: domain.rootId,
+      parentId: domain.parentId,
+      lft: domain.lft,
+      rgt: domain.rgt,
+      depth: domain.depth,
     }),
 };

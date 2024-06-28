@@ -4,8 +4,9 @@ export type UUID = z.infer<typeof UUID>;
 export type Bytes = z.infer<typeof Bytes>;
 export type PastTime = z.infer<typeof PastTime>;
 export type FileRef = z.infer<typeof FileRef>;
-export type Folder = FolderInfo & { folders: Folder[]; files: FileRef[] };
-export type FolderInfo = Omit<z.infer<typeof Folder>, 'folders' | 'files'>;
+export type Folder = z.infer<typeof Folder> &
+  Partial<{ files: FileRef[]; folders: Folder[] }>;
+export type FolderInfo = z.infer<typeof FolderInfo>;
 
 export type Owner = z.infer<typeof Owner>;
 export type Viewer = z.infer<typeof Viewer>;
@@ -32,19 +33,24 @@ export const FileRef = z.object({
   description: z.string().nullable(),
 });
 
-export const Folder = z.object({
+export const FolderInfo = z.object({
   id: UUID,
   name: z.string(),
   size: Bytes,
+  ownerId: UUID,
   createdAt: PastTime,
   pinnedAt: PastTime.nullable(),
   modifiedAt: PastTime.nullable(),
   archivedAt: PastTime.nullable(),
-  ownerId: UUID,
-
-  // --- content
-  files: z.array(z.lazy(() => FileRef)).default([]),
-  folders: z.array(z.lazy(() => Folder)).default([]),
+});
+export const Folder = FolderInfo.extend({
+  rootId: UUID.nullable(),
+  parentId: UUID.nullable(),
+  depth: z.number().int().min(0),
+  lft: z.number().int().min(0),
+  rgt: z.number().int().min(0),
+  files: z.lazy(() => z.array(FileRef)),
+  folders: z.lazy(() => z.array(Folder)),
 });
 
 // ========= Access control ========= //
