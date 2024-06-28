@@ -1,19 +1,29 @@
 import { Injectable, Provider } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+
 import * as Orm from '@prisma/client';
 import * as Domain from '@app/storage';
-import { FileMapper } from '../mappers';
 
-// type FolderFactory = typeof Domain.FolderFactory;
-// type InsertFolder = ReturnType<FolderFactory['createFolder']>;
+import { createRoot, FileMapper, FolderMapper } from '../mappers';
 
 @Injectable()
-export class StorageRepository {
+export class StorageRepository implements Domain.IStorageRepository {
   constructor(
-    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    private readonly txHost: TransactionHost<
+      TransactionalAdapterPrisma<Orm.PrismaClient>
+    >,
   ) {}
 
+  // =============== Read Side =============== //
+  getFolder(id: string) {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    return tx.folder
+      .findUnique({ where: { id } })
+      .then((f) => (f ? FolderMapper.toDomain(f) : null));
+  }
+
+  // =============== Write Side =============== //
   addFile(item: Domain.FileRef, folder: Domain.Folder) {
     const tx = this.txHost.tx as Orm.PrismaClient;
     const orm = FileMapper.toOrm(item);
@@ -72,14 +82,16 @@ export class StorageRepository {
   //   return Promise.all([add, update]).then(() => items);
   // }
 
-  // upsertRoot(ownerId: string, type: 'my-storage' = 'my-storage') {
-  //   const tx = this.txHost.tx as PrismaClient;
-  //   return tx.folder.upsert({
-  //     where: { id: ownerId },
-  //     create: FolderFactory.createRoot(ownerId, type),
-  //     update: {},
-  //   });
-  // }
+  upsertRoot(ownerId: string, type: 'my-storage' = 'my-storage') {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    return tx.folder
+      .upsert({
+        where: { id: ownerId },
+        create: createRoot(ownerId, type),
+        update: {},
+      })
+      .then(FolderMapper.toDomain);
+  }
 
   // createRoot(ownerId: string, type: 'my-storage') {
   //   const tx = this.txHost.tx as PrismaClient;
@@ -236,3 +248,9 @@ export class StorageRepository {
   //   return removed;
   // }
 }
+
+export const storageRepository: Provider = {
+  provide: Domain.IStorageRepository,
+  useClass: StorageRepository,
+};
+export default StorageRepository;

@@ -9,7 +9,9 @@ import { PrismaClient, User as PrismaUser } from '@prisma/client';
 @Injectable()
 export class UserRepository implements IUserRepository {
   constructor(
-    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    private readonly txHost: TransactionHost<
+      TransactionalAdapterPrisma<PrismaClient>
+    >,
   ) {}
 
   private get tx() {

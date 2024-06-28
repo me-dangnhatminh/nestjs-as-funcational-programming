@@ -15,7 +15,7 @@ export type Accessor = z.infer<typeof Accessor>;
 
 // ============================= Schemas ============================= //
 export const UUID = z.string().uuid();
-export const Bytes = z.number().min(0);
+export const Bytes = z.number().int().min(0);
 export const PastTime = z.date().refine((d) => d <= new Date());
 
 export const FileRef = z.object({
@@ -43,12 +43,11 @@ export const Folder = z.object({
   ownerId: UUID,
 
   // --- content
-  files: z.array(z.lazy(() => FileRef)),
-  folders: z.array(z.lazy(() => Folder)),
+  files: z.array(z.lazy(() => FileRef)).default([]),
+  folders: z.array(z.lazy(() => Folder)).default([]),
 });
 
-// =========
-
+// ========= Access control ========= //
 export const Accessor = z.object({ id: UUID });
 export const Owner = Accessor.brand('Owner');
 export const Viewer = Accessor.brand('Viewer');
@@ -56,7 +55,7 @@ export const Editor = Accessor.brand('Editor');
 export const Admin = Accessor.brand('Admin');
 
 export type ResourceTypes = Folder | FileRef;
-export type AccessorTypes = Owner | Viewer | Editor | Admin;
+export type AccessorTypes = Accessor | Owner | Viewer | Editor | Admin;
 export type PermissionWrapper<
   A extends AccessorTypes = AccessorTypes,
   R extends ResourceTypes = ResourceTypes,
@@ -67,9 +66,20 @@ export type PermissionWrapper<
   meta: Meta;
 }>;
 
-const isOwner = (
-  accessor: Accessor,
-  resource: Folder | FileRef,
-): accessor is Owner => accessor.id === resource.ownerId;
+const isOwner = <
+  A extends AccessorTypes = AccessorTypes,
+  R extends ResourceTypes = ResourceTypes,
+  Meta = unknown,
+>(
+  accessor: A,
+  resource: R,
+  meta: Meta,
+): PermissionWrapper<Owner, R, Meta> | null => {
+  const isOwner = resource.ownerId === accessor.id;
+  if (!isOwner) return null;
+  return structuredClone({ accessor: Owner.parse(accessor), resource, meta });
+};
 
-export const Permissions = Object.freeze({ isOwner });
+export const Permissions = {
+  isOwner,
+} as const;

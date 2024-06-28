@@ -1,14 +1,33 @@
-import { Admin, FileRef, Folder, Owner, PermissionWrapper } from '../domain';
-import { StorageRepository } from '@app/persistence';
+import { Injectable } from '@nestjs/common';
+import {
+  Admin,
+  FileRef,
+  Folder,
+  IStorageRepository,
+  Owner,
+  PermissionWrapper,
+} from '../domain';
 
+type AddFileCmd = PermissionWrapper<Owner | Admin, Folder, FileRef>;
+type AddFilesCmd = PermissionWrapper<Owner | Admin, Folder, FileRef[]>;
+
+@Injectable()
 export class StorageService {
-  constructor(private readonly storageRepo: StorageRepository) {}
+  constructor(private readonly storageRepo: IStorageRepository) {}
 
-  addFile(acc: PermissionWrapper<Owner | Admin, Folder, FileRef>) {
-    return this.storageRepo.addFile(acc.meta, acc.resource);
+  getMyStorage(userId: string) {
+    return this.storageRepo.upsertRoot(userId);
   }
 
-  addFiles(acc: PermissionWrapper<Owner | Admin, Folder, FileRef[]>) {
-    return this.storageRepo.addFiles(acc.meta, acc.resource);
+  getFolder(id: string) {
+    return this.storageRepo.getFolder(id);
+  }
+
+  addFile(cmd: AddFileCmd) {
+    return this.storageRepo.addFile(cmd.meta, cmd.resource);
+  }
+
+  addFiles(cmd: AddFilesCmd) {
+    return this.storageRepo.addFiles(cmd.meta, cmd.resource);
   }
 }

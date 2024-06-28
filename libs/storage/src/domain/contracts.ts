@@ -1,1 +1,8 @@
-export abstract class IStorageRepository {}
+import { FileRef, Folder } from './models';
+
+export abstract class IStorageRepository {
+  abstract getFolder(id: string): Promise<Folder | null>;
+  abstract addFile(item: FileRef, folder: Folder): Promise<void>;
+  abstract addFiles(items: FileRef[], folder: Folder): Promise<void>;
+  abstract upsertRoot(userId: string): Promise<Folder>;
+}
