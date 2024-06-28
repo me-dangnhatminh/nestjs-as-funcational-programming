@@ -54,7 +54,7 @@ export const Viewer = Accessor.brand('Viewer');
 export const Editor = Accessor.brand('Editor');
 export const Admin = Accessor.brand('Admin');
 
-export type ResourceTypes = Folder | FileRef;
+export type ResourceTypes = FolderInfo | Folder | FileRef;
 export type AccessorTypes = Accessor | Owner | Viewer | Editor | Admin;
 export type PermissionWrapper<
   A extends AccessorTypes = AccessorTypes,

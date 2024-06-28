@@ -5,8 +5,9 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import * as Orm from '@prisma/client';
 import * as Domain from '@app/storage';
 
-import { createRoot, FileMapper, FolderMapper } from '../mappers';
+import { createFolder, createRoot, FileMapper, FolderMapper } from '../mappers';
 
+type InsertFolder = Omit<Orm.Folder, 'lft' | 'rgt' | 'depth'>;
 @Injectable()
 export class StorageRepository implements Domain.IStorageRepository {
   constructor(
@@ -14,6 +15,72 @@ export class StorageRepository implements Domain.IStorageRepository {
       TransactionalAdapterPrisma<Orm.PrismaClient>
     >,
   ) {}
+
+  // async getFolderLazy(id: string): Promise<Domain.Folder | null> {
+  //   if (!id) return null;
+  //   const tx = this.txHost.tx as Orm.PrismaClient;
+  //   const folder = await tx.folder.findUnique({ where: { id } });
+  //   if (!folder) return null;
+  //   const folderDomain = FolderMapper.toDomain(folder);
+  //   return this.createLazyLoadingProxy(folderDomain, id);
+  // }
+
+  async addFolder(item: Domain.Folder, parent: Domain.Folder): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  async ramdom() {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    const ownerId = '114b686b-ebb7-426e-ad18-1c82198f1422';
+    const parent = await tx.folder.findUniqueOrThrow({
+      where: { id: ownerId },
+    });
+
+    const items = Array.from({ length: 1000 }, (_, i) =>
+      createFolder(
+        ownerId,
+        `Folder ${i}`,
+        '2399e377-d0b8-4ff7-9424-f7d55b2f3148',
+      ),
+    );
+    await this.addFolders(items as InsertFolder[], parent);
+  }
+
+  getFolderLazy(id: string): Promise<Domain.Folder | null> {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    return tx.folder
+      .findUnique({ where: { id } })
+      .then((f) => (f ? FolderMapper.toDomain(f) : null))
+      .then((folder) => {
+        if (!folder) return null;
+        return new Proxy(folder, {
+          get: (target, prop: keyof Domain.Folder) => {
+            if (prop === 'folders') return this.getContentLazy(folder.id);
+            return Reflect.get(target, prop);
+          },
+        });
+      });
+  }
+
+  async getContentLazy(parentId: string) {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    const folder = await tx.folder.findMany({ where: { parentId } });
+    let isLoad = false;
+    return folder.map(
+      (f) =>
+        new Proxy(FolderMapper.toDomain(f), {
+          get: (target, prop: keyof Domain.Folder) => {
+            if (prop === 'folders') {
+              if (!isLoad) {
+                isLoad = true;
+                return this.getContentLazy(f.id);
+              }
+            }
+            return Reflect.get(target, prop);
+          },
+        }),
+    );
+  }
 
   // =============== Write Side =============== //
   getFileRef(id: string): Promise<Domain.FileRef | null> {
@@ -116,99 +183,99 @@ export class StorageRepository implements Domain.IStorageRepository {
   //   return tx.folder.create({ data: root });
   // }
 
-  // addFolder(item: InsertFolder, folder: Folder) {
-  //   const tx = this.txHost.tx as PrismaClient;
-  //   const tasks: Promise<unknown>[] = [];
+  _addFolder(item: InsertFolder, folder: Orm.Folder) {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    const tasks: Promise<unknown>[] = [];
 
-  //   // extend root
-  //   const rootId = folder.rootId ?? folder.id;
-  //   const eRoot = tx.folder.update({
-  //     where: {
-  //       id: rootId,
-  //       rootId: { equals: null },
-  //       parentId: { equals: null },
-  //       lft: 0,
-  //       depth: 0,
-  //     },
-  //     data: { rgt: { increment: 2 } },
-  //   });
-  //   tasks.push(eRoot);
+    // extend root
+    const rootId = folder.rootId ?? folder.id;
+    const eRoot = tx.folder.update({
+      where: {
+        id: rootId,
+        rootId: { equals: null },
+        parentId: { equals: null },
+        lft: 0,
+        depth: 0,
+      },
+      data: { rgt: { increment: 2 } },
+    });
+    tasks.push(eRoot);
 
-  //   // extend right siblings
-  //   const isRoot = folder.rootId === folder.id;
-  //   if (!isRoot) {
-  //     const eRgt = tx.folder.updateMany({
-  //       where: { rootId, rgt: { gte: folder.rgt } },
-  //       data: { rgt: { increment: 2 } },
-  //     });
-  //     const eFRgt = tx.folder.updateMany({
-  //       where: { rootId, lft: { gt: folder.rgt } },
-  //       data: { lft: { increment: 2 } },
-  //     });
-  //     tasks.push(eRgt, eFRgt);
-  //   }
+    // extend right siblings
+    const isRoot = folder.rootId === folder.id;
+    if (!isRoot) {
+      const eRgt = tx.folder.updateMany({
+        where: { rootId, rgt: { gte: folder.rgt } },
+        data: { rgt: { increment: 2 } },
+      });
+      const eFRgt = tx.folder.updateMany({
+        where: { rootId, lft: { gt: folder.rgt } },
+        data: { lft: { increment: 2 } },
+      });
+      tasks.push(eRgt, eFRgt);
+    }
 
-  //   // -- insert new folder
-  //   const data: Folder = Object.assign({}, item, {
-  //     rootId: rootId,
-  //     parentId: folder.id,
-  //     lft: folder.rgt,
-  //     rgt: folder.rgt + 1,
-  //     depth: folder.depth + 1,
-  //     archivedAt: folder.archivedAt,
-  //   });
-  //   const insert = tx.folder.create({ data });
-  //   tasks.push(insert);
-  //   return Promise.all(tasks).then(() => data);
-  // }
+    // -- insert new folder
+    const data: Orm.Folder = Object.assign({}, item, {
+      rootId: rootId,
+      parentId: folder.id,
+      lft: folder.rgt,
+      rgt: folder.rgt + 1,
+      depth: folder.depth + 1,
+      archivedAt: folder.archivedAt,
+    });
+    const insert = tx.folder.create({ data });
+    tasks.push(insert);
+    return Promise.all(tasks).then(() => data);
+  }
 
-  // addFolders(items: InsertFolder[], folder: Folder) {
-  //   const tx = this.txHost.tx as PrismaClient;
-  //   const tasks: Promise<unknown>[] = [];
-  //   // extend root
-  //   const rootId = folder.rootId ?? folder.id;
-  //   const diff = items.length * 2;
-  //   const extendRoot = tx.folder.update({
-  //     where: {
-  //       id: rootId,
-  //       rootId: { equals: null },
-  //       parentId: { equals: null },
-  //       lft: 0,
-  //       depth: 0,
-  //     },
-  //     data: { rgt: { increment: diff } },
-  //   });
-  //   tasks.push(extendRoot);
+  addFolders(items: InsertFolder[], folder: Orm.Folder) {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    const tasks: Promise<unknown>[] = [];
+    // extend root
+    const rootId = folder.rootId ?? folder.id;
+    const diff = items.length * 2;
+    const extendRoot = tx.folder.update({
+      where: {
+        id: rootId,
+        rootId: { equals: null },
+        parentId: { equals: null },
+        lft: 0,
+        depth: 0,
+      },
+      data: { rgt: { increment: diff } },
+    });
+    tasks.push(extendRoot);
 
-  //   // extend right siblings
-  //   const isRoot = folder.rootId === folder.id;
-  //   if (!isRoot) {
-  //     const extenRight = tx.folder.updateMany({
-  //       where: { rootId, rgt: { gte: folder.rgt } },
-  //       data: { rgt: { increment: diff } },
-  //     });
-  //     const extendLeft = tx.folder.updateMany({
-  //       where: { rootId, lft: { gt: folder.rgt } },
-  //       data: { lft: { increment: diff } },
-  //     });
-  //     tasks.push(extenRight, extendLeft);
-  //   }
+    // extend right siblings
+    const isRoot = folder.rootId === folder.id;
+    if (!isRoot) {
+      const extenRight = tx.folder.updateMany({
+        where: { rootId, rgt: { gte: folder.rgt } },
+        data: { rgt: { increment: diff } },
+      });
+      const extendLeft = tx.folder.updateMany({
+        where: { rootId, lft: { gt: folder.rgt } },
+        data: { lft: { increment: diff } },
+      });
+      tasks.push(extenRight, extendLeft);
+    }
 
-  //   // -- insert new folders
-  //   const data = items.map((item, i) =>
-  //     Object.assign({}, item, {
-  //       rootId: rootId,
-  //       parentId: folder.id,
-  //       lft: folder.rgt + i * 2,
-  //       rgt: folder.rgt + i * 2 + 1,
-  //       depth: folder.depth + 1,
-  //       archivedAt: folder.archivedAt,
-  //     }),
-  //   );
-  //   const inserts = tx.folder.createMany({ data });
-  //   tasks.push(inserts);
-  //   return Promise.all(tasks).then(() => data);
-  // }
+    // -- insert new folders
+    const data = items.map((item, i) =>
+      Object.assign({}, item, {
+        rootId: rootId,
+        parentId: folder.id,
+        lft: folder.rgt + i * 2,
+        rgt: folder.rgt + i * 2 + 1,
+        depth: folder.depth + 1,
+        archivedAt: folder.archivedAt,
+      }),
+    );
+    const inserts = tx.folder.createMany({ data });
+    tasks.push(inserts);
+    return Promise.all(tasks).then(() => data);
+  }
 
   // async softDelete(folder: Folder) {
   //   const tx = this.txHost.tx as PrismaClient;

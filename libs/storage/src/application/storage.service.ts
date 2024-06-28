@@ -3,17 +3,23 @@ import {
   Admin,
   FileRef,
   Folder,
+  FolderInfo,
   IDiskStorage,
   IStorageRepository,
   Owner,
   PermissionWrapper,
 } from '../domain';
 
-type HardRemoveFileCmd = PermissionWrapper<Owner | Admin, FileRef, null>;
-type AddFileCmd = PermissionWrapper<Owner | Admin, Folder, FileRef>;
-type AddFilesCmd = PermissionWrapper<Owner | Admin, Folder, FileRef[]>;
+export type HardRemoveFileCmd = PermissionWrapper<Owner | Admin, FileRef, null>;
+export type AddFileCmd = PermissionWrapper<Owner | Admin, Folder, FileRef>;
+export type AddFilesCmd = PermissionWrapper<Owner | Admin, Folder, FileRef[]>;
 
-type GetFileContentQ = PermissionWrapper<Owner | Admin, FileRef, null>;
+export type GetFilePathQ = PermissionWrapper<Owner | Admin, FileRef, null>;
+export type GetFolderContentQ = PermissionWrapper<
+  Owner | Admin,
+  FolderInfo,
+  { depth: number; isFlat: boolean }
+>;
 
 @Injectable()
 export class StorageService {
@@ -22,9 +28,18 @@ export class StorageService {
     private readonly storageRepo: IStorageRepository,
   ) {}
 
-  getContent(query: GetFileContentQ) {
-    const file = query.resource;
-    return this.diskStorage.getPath(file);
+  async getFolderContent() {
+    const id = '114b686b-ebb7-426e-ad18-1c82198f1422';
+    const folder = await this.storageRepo.getFolderLazy(id);
+    return folder?.folders[0].folders;
+    if (!folder) throw new Error('Folder not found');
+    const first = folder[0];
+    console.log(first);
+    return first.folders;
+  }
+
+  getFilePath(q: GetFilePathQ) {
+    return this.diskStorage.getPath(q.resource);
   }
 
   getFileRef(id: string) {
