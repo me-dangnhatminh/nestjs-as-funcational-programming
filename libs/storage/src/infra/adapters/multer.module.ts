@@ -1,3 +1,7 @@
+import {
+  MulterModuleOptions,
+  MulterOptionsFactory,
+} from '@nestjs/platform-express';
 import * as multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs-extra';
@@ -5,55 +9,20 @@ import {
   CallHandler,
   ExecutionContext,
   Injectable,
+  Module,
   NestInterceptor,
-  UseInterceptors,
+  Provider,
 } from '@nestjs/common';
 import { Request, RequestWithUser } from 'express';
 import * as RxJs from 'rxjs';
 import { v4 as uuid } from 'uuid';
+import { FileRef, IDiskStorage } from '@app/storage/domain';
+import { MulterModule as NestMulter } from '@nestjs/platform-express';
 
-const DIST_PREFIX = 'dist/uploads';
-const ROLLBACK_EVENT = 'UPLOAD_FAILED';
-
-export const diskStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const destination = path.resolve(DIST_PREFIX);
-    Object.assign(file, { destination });
-    return cb(null, destination);
-  },
-  filename: (req: RequestWithUser, file: Express.Multer.FileExt, cb) => {
-    const { destination } = file;
-
-    const id = uuid();
-    const filename = `${id}`;
-    const fullpath = path.join(destination, filename);
-
-    // const extend: FileRef = {
-    //   id: id as any,
-    //   name: file.originalname,
-    //   size: file.size as any,
-    //   createdAt: new Date(),
-    //   modifiedAt: null,
-    //   archivedAt: null,
-    //   pinnedAt: null,
-    //   ownerId: req.user.id as any,
-    //   contentType: file.mimetype,
-    //   thumbnail: null,
-    //   description: null,
-    // };
-
-    file.path = fullpath;
-    // file.extended = extend;
-
-    const rollback = () => req.on(ROLLBACK_EVENT, () => fs.unlink(file.path));
-    file.stream.on('end', rollback);
-
-    cb(null, filename);
-  },
-});
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Injectable()
-export class RollbackFileUploadedInterceptor implements NestInterceptor {
+export class FileRollbackInterceptor implements NestInterceptor {
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -64,6 +33,57 @@ export class RollbackFileUploadedInterceptor implements NestInterceptor {
   }
 }
 
-export function RollbackFileUploaded() {
-  return UseInterceptors(RollbackFileUploadedInterceptor);
+@Injectable()
+class MulterDiskStorage implements IDiskStorage, MulterOptionsFactory {
+  private readonly destination = path.resolve(DIST_PREFIX);
+
+  createMulterOptions(): MulterModuleOptions {
+    return {
+      storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+          Object.assign(file, { destination: this.destination });
+          return cb(null, this.destination);
+        },
+        filename: (req: RequestWithUser, file: Express.Multer.FileExt, cb) => {
+          const { destination } = file;
+
+          const id = uuid();
+          const filename = `${id}`;
+          const fullpath = path.join(destination, filename);
+          file.path = fullpath;
+          const rollback = () =>
+            req.on(ROLLBACK_EVENT, () => fs.unlink(file.path));
+          file.stream.on('end', rollback);
+
+          cb(null, filename);
+        },
+      }),
+    };
+  }
+
+  getPath(item: FileRef) {
+    const fullpath = path.join(this.destination, item.id);
+    return fs.existsSync(fullpath) ? fullpath : null;
+  }
 }
+
+const DIST_PREFIX = 'dist/uploads';
+const ROLLBACK_EVENT = 'UPLOAD_FAILED';
+
+const diskStorage: Provider = {
+  provide: IDiskStorage,
+  useClass: MulterDiskStorage,
+};
+
+@Module({
+  imports: [NestMulter.registerAsync({ useClass: MulterDiskStorage })],
+  providers: [
+    diskStorage,
+    { provide: APP_INTERCEPTOR, useClass: FileRollbackInterceptor },
+  ],
+  exports: [NestMulter, diskStorage],
+})
+export class MulterModule {}
+export default MulterModule;
+
+// ================================= INTERCEPTOR =================================

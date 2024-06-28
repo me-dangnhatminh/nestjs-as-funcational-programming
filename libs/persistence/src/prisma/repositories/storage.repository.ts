@@ -15,6 +15,14 @@ export class StorageRepository implements Domain.IStorageRepository {
     >,
   ) {}
 
+  // =============== Write Side =============== //
+  getFileRef(id: string): Promise<Domain.FileRef | null> {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    return tx.fileRef
+      .findUnique({ where: { id } })
+      .then((f) => f && FileMapper.toDomain(f));
+  }
+
   // =============== Read Side =============== //
   getFolder(id: string) {
     const tx = this.txHost.tx as Orm.PrismaClient;
@@ -42,6 +50,15 @@ export class StorageRepository implements Domain.IStorageRepository {
       data: orm.map((item) => ({ folderId: folder.id, fileId: item.id })),
     });
     return Promise.all([add, update]).then(() => {});
+  }
+
+  hardRemoveFile(item: Domain.FileRef): Promise<void> {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    const remove = tx.fileRef.delete({ where: { id: item.id } });
+    const removeInFolder = tx.fileInFolder.deleteMany({
+      where: { fileId: item.id },
+    });
+    return Promise.all([remove, removeInFolder]).then(() => {});
   }
 
   // // =============== READ SIDE =============== //

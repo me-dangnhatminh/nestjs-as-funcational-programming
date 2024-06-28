@@ -1,12 +1,13 @@
 import { Global, Module } from '@nestjs/common';
 
 import { services } from './application';
-import { controllers } from './infra';
+import { adapters, controllers } from './infra';
 
 @Global()
 @Module({
-  controllers: controllers,
+  imports: [...adapters],
   providers: services,
+  controllers: controllers,
 })
 export class StorageModule {}
 

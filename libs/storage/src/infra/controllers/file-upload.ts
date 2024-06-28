@@ -9,10 +9,10 @@ import {
 } from '@nestjs/common';
 import { Transactional } from '@nestjs-cls/transactional';
 import { FileInterceptor } from '@nestjs/platform-express';
+
 import { Authenticated, useZodPipe } from '@app/auth';
 
 import { StorageService } from '../../application';
-import { diskStorage, RollbackFileUploaded } from '../adapters';
 import { Accessor, FileRef, PastTime, Permissions } from '../../domain';
 import * as z from 'zod';
 
@@ -28,12 +28,12 @@ export type UploadFileDTO = z.infer<typeof UploadFileDTO>;
 
 @Controller('storage')
 @UseGuards(Authenticated)
-export class UploadedFileUseCase {
+export class FileUploadUseCase {
   constructor(private readonly storageService: StorageService) {}
 
   @Post('my')
-  @UseInterceptors(FileInterceptor('file', { storage: diskStorage }))
-  @RollbackFileUploaded()
+  @UseInterceptors()
+  @UseInterceptors(FileInterceptor('file'))
   @Transactional()
   async execute(
     @Req() req,
@@ -57,4 +57,4 @@ export class UploadedFileUseCase {
     return await this.storageService.addFile(valid);
   }
 }
-export default UploadedFileUseCase;
+export default FileUploadUseCase;
