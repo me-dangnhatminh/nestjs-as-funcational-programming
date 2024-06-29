@@ -8,6 +8,7 @@ import {
   IStorageRepository,
   Owner,
   PermissionWrapper,
+  UUID,
 } from '../domain';
 
 export type HardRemoveFileCmd = PermissionWrapper<Owner | Admin, FileRef, null>;
@@ -37,7 +38,7 @@ export class StorageService {
     return this.storageRepo.getFileRef(id);
   }
 
-  getMyStorage(userId: string) {
+  getMyStorage(userId: UUID) {
     return this.storageRepo.upsertRoot(userId);
   }
 

@@ -1,6 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Param,
+  ParseFilePipe,
   Post,
   Req,
   UploadedFile,
@@ -15,6 +18,7 @@ import { Authenticated, useZodPipe } from '@app/auth';
 import { StorageService } from '../../application';
 import { Accessor, FileRef, PastTime, Permissions } from '../../domain';
 import * as z from 'zod';
+import { UUID } from '@app/auth/domain';
 
 export const UploadFileDTO = z.object({
   pinnedAt: PastTime.nullable().default(null),
@@ -31,15 +35,18 @@ export type UploadFileDTO = z.infer<typeof UploadFileDTO>;
 export class FileUploadUseCase {
   constructor(private readonly storageService: StorageService) {}
 
-  @Post('my')
-  @UseInterceptors()
+  @Post('folders/:id')
   @UseInterceptors(FileInterceptor('file'))
   @Transactional()
   async execute(
     @Req() req,
     @Body(useZodPipe(UploadFileDTO)) dto: UploadFileDTO,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
+    file: Express.Multer.File,
+    @Param('id') id: string,
   ) {
+    if (id === 'my-storage') id = req.user.id;
+    const folderId = UUID.parse(id);
     const user = Accessor.parse(req.user);
     const fileRef = FileRef.parse({
       ...dto,
@@ -50,9 +57,10 @@ export class FileUploadUseCase {
       ownerId: user.id,
     });
     // ----------------- Access control -----------------
-    const resource = await this.storageService.getMyStorage(user.id);
+    const resource = await this.storageService.getFolder(folderId);
+    if (!resource) throw new BadRequestException(`Folder not found`);
     const valid = Permissions.isOwner(user, resource, fileRef);
-    if (!valid) throw new Error(`Access denied, can error in AuthGuard`);
+    if (!valid) throw new BadRequestException('Folder not found'); // TODO: dont use FobiddenException
     // --------------------------------------------------
     return await this.storageService.addFile(valid);
   }

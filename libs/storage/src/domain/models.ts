@@ -4,8 +4,7 @@ export type UUID = z.infer<typeof UUID>;
 export type Bytes = z.infer<typeof Bytes>;
 export type PastTime = z.infer<typeof PastTime>;
 export type FileRef = z.infer<typeof FileRef>;
-export type Folder = z.infer<typeof Folder> &
-  Partial<{ files: FileRef[]; folders: Folder[] }>;
+export type Folder = z.infer<typeof Folder>;
 export type FolderInfo = z.infer<typeof FolderInfo>;
 
 export type Owner = z.infer<typeof Owner>;
@@ -49,8 +48,8 @@ export const Folder = FolderInfo.extend({
   depth: z.number().int().min(0),
   lft: z.number().int().min(0),
   rgt: z.number().int().min(0),
-  files: z.lazy(() => z.array(FileRef)),
-  folders: z.lazy(() => z.array(Folder)),
+  files: z.lazy(() => z.array(FileRef)).optional(),
+  folders: z.lazy(() => z.array(Folder)).optional(),
 });
 
 // ========= Access control ========= //

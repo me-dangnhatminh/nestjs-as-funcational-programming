@@ -67,7 +67,7 @@ class MulterDiskStorage implements IDiskStorage, MulterOptionsFactory {
   }
 }
 
-const DIST_PREFIX = 'dist/uploads';
+const DIST_PREFIX = 'uploads';
 const ROLLBACK_EVENT = 'UPLOAD_FAILED';
 
 const diskStorage: Provider = {
@@ -75,12 +75,14 @@ const diskStorage: Provider = {
   useClass: MulterDiskStorage,
 };
 
+const rollbackInterceptor: Provider = {
+  provide: APP_INTERCEPTOR,
+  useClass: FileRollbackInterceptor,
+};
+
 @Module({
   imports: [NestMulter.registerAsync({ useClass: MulterDiskStorage })],
-  providers: [
-    diskStorage,
-    { provide: APP_INTERCEPTOR, useClass: FileRollbackInterceptor },
-  ],
+  providers: [diskStorage, rollbackInterceptor],
   exports: [NestMulter, diskStorage],
 })
 export class MulterModule {}
