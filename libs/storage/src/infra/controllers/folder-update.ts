@@ -21,14 +21,14 @@ const Archive = z.object({ label: z.literal('archive') });
 const Pin = z.object({ label: z.literal('pin') });
 const Unpin = z.object({ label: z.literal('unpin') });
 const Unarchive = z.object({ label: z.literal('unarchive') });
+const UpdateDTO = z.union([Rename, Archive, Pin, Unpin, Unarchive]);
 
 type Rename = z.infer<typeof Rename>;
 type Archive = z.infer<typeof Archive>;
 type Pin = z.infer<typeof Pin>;
 type Unpin = z.infer<typeof Unpin>;
 type Unarchive = z.infer<typeof Unarchive>;
-
-type UpdateBody = Rename | Archive | Pin | Unpin | Unarchive;
+type UpdateDTO = z.infer<typeof UpdateDTO>;
 
 type UpdateProps = Partial<{
   name: string;
@@ -47,7 +47,7 @@ const updateStrategy = (props: UpdateProps, folder: FolderInfo) => {
   return Object.freeze(clone);
 };
 const badReq = (msg: string) => new BadRequestException(msg);
-const update = (body: UpdateBody, folder: FolderInfo) => {
+const update = (body: UpdateDTO, folder: FolderInfo) => {
   switch (body.label) {
     case 'rename':
       return updateStrategy({ name: body.name }, folder);
@@ -77,8 +77,7 @@ export class FolderUpdateUseCase {
   @Transactional()
   async excute(
     @Req() req: RequestWithUser,
-    @Body(useZodPipe(z.union([Rename, Archive, Pin])))
-    body: Rename | Archive | Pin,
+    @Body(useZodPipe(UpdateDTO)) body: UpdateDTO,
     @Param('id', useZodPipe(UUID)) id: UUID,
   ) {
     const folder = await this.storageService.getFolder(id);
