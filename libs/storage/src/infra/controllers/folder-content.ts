@@ -6,7 +6,6 @@ import {
   Controller,
   Get,
   Param,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -62,10 +61,17 @@ export class FolderContentUseCase {
     const tx = this.txHost.tx as ReadSide.PrismaClient;
 
     const parent = await tx.folder.findUnique({
-      where: { id: folderId, archivedAt: null, ownerId: req.user.id },
+      where: {
+        id: folderId,
+        archivedAt: null,
+        ownerId: req.user.id,
+      },
       include: {
         folders: { where: { archivedAt: null } },
-        files: { include: { file: true } },
+        files: {
+          where: { file: { archivedAt: null } },
+          include: { file: true },
+        },
       },
     });
     if (!parent) throw new BadRequestException('Folder not found');
@@ -78,9 +84,7 @@ export class FolderContentUseCase {
         limit: 10,
         offset: 0,
         total,
-        files: parent.files
-          .filter((f) => !f.file.archivedAt)
-          .map((f) => f.file),
+        files: parent.files.map((f) => f.file),
         folders: parent.folders,
       },
     };

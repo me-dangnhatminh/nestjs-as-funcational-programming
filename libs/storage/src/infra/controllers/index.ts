@@ -3,6 +3,7 @@ import FileUploadUseCase from './file-upload';
 import FolderUpdateUseCase from './folder-update';
 import FolderContentUseCase from './folder-content';
 import FolderCreateUseCase from './folder-create';
+import { FolderUploadUseCase } from './folder-upload';
 
 export const controllers = [
   FileUploadUseCase,
@@ -10,5 +11,6 @@ export const controllers = [
   FolderCreateUseCase,
   FolderContentUseCase,
   FolderUpdateUseCase,
+  FolderUploadUseCase,
 ];
 export default controllers;
