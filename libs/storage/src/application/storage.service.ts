@@ -26,6 +26,14 @@ export class StorageService {
     private readonly storageRepo: IStorageRepository,
   ) {}
 
+  updateFolder(folder: FolderInfo) {
+    return this.storageRepo.updateFolder(folder);
+  }
+
+  updateFile(file: FileRef) {
+    return this.storageRepo.updateFile(file);
+  }
+
   addFolder(cmd: AddFolderCmd) {
     return this.storageRepo.addFolder(cmd.meta, cmd.resource);
   }

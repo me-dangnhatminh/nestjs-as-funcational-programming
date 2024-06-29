@@ -9,6 +9,23 @@ import { createRoot, FileMapper, FolderMapper } from '../mappers';
 @Injectable()
 export class StorageRepository implements Domain.IStorageRepository {
   constructor(private readonly txHost: TransactionHost) {}
+
+  async updateFile(item: Domain.FileRef): Promise<void> {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    await tx.fileRef.update({
+      where: { id: item.id },
+      data: FileMapper.toOrm(item),
+    });
+  }
+
+  async updateFolder(item: Domain.FolderInfo): Promise<void> {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    await tx.folder.update({
+      where: { id: item.id },
+      data: item,
+    });
+  }
+
   upsertRoot(userId: Domain.UUID): Promise<Domain.Folder> {
     const tx = this.txHost.tx as Orm.PrismaClient;
     return tx.folder

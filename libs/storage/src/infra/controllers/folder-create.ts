@@ -57,3 +57,4 @@ export class FolderCreateUseCase {
     res.setHeader('Location', `/storage/folders/${newItem.id}`);
   }
 }
+export default FolderCreateUseCase;

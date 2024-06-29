@@ -62,9 +62,9 @@ export class FolderContentUseCase {
     const tx = this.txHost.tx as ReadSide.PrismaClient;
 
     const parent = await tx.folder.findUnique({
-      where: { id: folderId },
+      where: { id: folderId, archivedAt: null, ownerId: req.user.id },
       include: {
-        folders: true,
+        folders: { where: { archivedAt: null } },
         files: { include: { file: true } },
       },
     });
@@ -78,7 +78,9 @@ export class FolderContentUseCase {
         limit: 10,
         offset: 0,
         total,
-        files: parent.files.map((f) => f.file),
+        files: parent.files
+          .filter((f) => !f.file.archivedAt)
+          .map((f) => f.file),
         folders: parent.folders,
       },
     };
@@ -160,3 +162,4 @@ export class FolderContentUseCase {
 //     },
 //   };
 // }
+export default FolderContentUseCase;
