@@ -13,7 +13,7 @@ import {
   NestInterceptor,
   Provider,
 } from '@nestjs/common';
-import { Request, RequestWithUser } from 'express';
+import { Request } from 'express';
 import * as RxJs from 'rxjs';
 import { v4 as uuid } from 'uuid';
 import { FileRef, IDiskStorage } from '@app/storage/domain';
@@ -44,7 +44,7 @@ class MulterDiskStorage implements IDiskStorage, MulterOptionsFactory {
           Object.assign(file, { destination: this.destination });
           return cb(null, this.destination);
         },
-        filename: (req: RequestWithUser, file: Express.Multer.FileExt, cb) => {
+        filename: (req: Request, file: Express.Multer.File, cb) => {
           const { destination } = file;
 
           const id = uuid();

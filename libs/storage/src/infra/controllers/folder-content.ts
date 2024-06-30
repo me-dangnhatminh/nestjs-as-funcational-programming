@@ -1,6 +1,7 @@
-import { Authenticated, useZodPipe } from '@app/auth';
+import { Authenticated } from '@app/auth';
 import { UUID } from '@app/auth/domain';
-import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
+import { Accessor } from '@app/storage/domain';
+import { TransactionHost } from '@nestjs-cls/transactional';
 import {
   BadRequestException,
   Controller,
@@ -10,27 +11,26 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import * as ReadSide from '@prisma/client';
-import { RequestWithUser } from 'express';
-import * as z from 'zod';
+// import * as z from 'zod';
 
-const Lable = z.enum(['recent', 'pinned', 'archived']);
-const SortOrder = z.enum(['asc', 'desc']);
-const SortField = z.enum([
-  'name',
-  'size',
-  'createdAt',
-  'modifiedAt',
-  'pinnedAt',
-]);
+// const Lable = z.enum(['recent', 'pinned', 'archived']);
+// const SortOrder = z.enum(['asc', 'desc']);
+// const SortField = z.enum([
+//   'name',
+//   'size',
+//   'createdAt',
+//   'modifiedAt',
+//   'pinnedAt',
+// ]);
 
-const OffsetPaginationDTO = z.object({
-  label: Lable.default('recent'),
-  sort: SortField.default('name'),
-  order: SortOrder.default('asc'),
-  limit: z.number().int().min(10).max(100).default(10),
-  offset: z.number().int().min(0).default(0),
-});
-type OffsetPaginationDTO = z.infer<typeof OffsetPaginationDTO>;
+// const OffsetPaginationDTO = z.object({
+//   label: Lable.default('recent'),
+//   sort: SortField.default('name'),
+//   order: SortOrder.default('asc'),
+//   limit: z.number().int().min(10).max(100).default(10),
+//   offset: z.number().int().min(0).default(0),
+// });
+// type OffsetPaginationDTO = z.infer<typeof OffsetPaginationDTO>;
 
 type OffsetPaginationResult = {
   sort: string;
@@ -54,10 +54,11 @@ export class FolderContentUseCase {
 
   @Get(['', 'folders/:id'])
   async excute(
-    @Req() req: RequestWithUser,
+    @Req() req,
     @Param('id') id: string,
   ): Promise<FolderContentResult> {
-    const folderId = UUID.parse(id ?? req.user.id);
+    const user = Accessor.parse(req.user);
+    const folderId = UUID.parse(id ?? user.id);
     const tx = this.txHost.tx as ReadSide.PrismaClient;
 
     const parent = await tx.folder.findUnique({

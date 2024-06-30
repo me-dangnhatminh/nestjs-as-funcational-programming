@@ -18,7 +18,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Request, RequestWithUser } from 'express';
+import { Request } from 'express';
 import { Transactional } from '@nestjs-cls/transactional';
 
 import {
@@ -50,8 +50,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(Authenticated)
-  getMe(@Req() { user }: RequestWithUser) {
-    return { id: user.id, email: user.email, verifiedAt: user.verifiedAt };
+  getMe(@Req() req) {
+    return User.parse(req.user);
   }
 
   @Post('email/sign-up')
@@ -95,7 +95,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Transactional()
   @UseGuards(Authenticated)
-  async resendComfirmEmail(@Req() { user }: RequestWithUser) {
+  async resendComfirmEmail(@Req() req) {
+    const user = User.parse(req.user);
     const isVerified = Boolean(user.verifiedAt);
     if (isVerified) throw new BadRequestException('Email already verified');
     const claim = toClaim(user);
@@ -106,7 +107,8 @@ export class AuthController {
   @Post('password/forgot')
   @HttpCode(HttpStatus.OK)
   @Transactional()
-  async forgotPassword(@Req() { user }: RequestWithUser) {
+  async forgotPassword(@Req() req) {
+    const user = User.parse(req.user);
     const claim = toClaim(user);
     const token = await this.jwtService.genForgotPassToken(claim);
     return this.mailerService.sendForgotPasswordEmail(user, token);

@@ -16,7 +16,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { RequestWithUser, Response } from 'express';
+import { Response } from 'express';
 import * as z from 'zod';
 import { v4 as uuid } from 'uuid';
 
@@ -37,14 +37,14 @@ export class FolderCreateUseCase {
 
   @Post('folders')
   async excute(
-    @Req() req: RequestWithUser,
+    @Req() req,
     @Body(useZodPipe(CreateFolderDTO)) dto: CreateFolderDTO,
     @Res({ passthrough: true }) res: Response,
   ) {
-    if (dto.parentId === null) dto.parentId = req.user.id; // add root folder
+    const user = Accessor.parse(req.user);
+    if (dto.parentId === null) dto.parentId = user.id;
     const folder = await this.storageService.getFolder(dto.parentId);
     if (!folder) throw new BadRequestException('Parent folder not found');
-    const user = Accessor.parse({ id: req.user.id });
     const item = FolderInfo.parse({
       ...dto,
       id: uuid(),

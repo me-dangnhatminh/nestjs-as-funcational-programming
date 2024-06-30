@@ -6,8 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { RequestWithUser } from 'express';
-import { UserRole } from '@app/auth/domain';
+import { User, UserRole } from '@app/auth/domain';
 import { AllowRoles } from '../decorators';
 
 const NotAllowPermission = () =>
@@ -21,8 +20,8 @@ export class AllowedRoles implements CanActivate {
     const handler = context.getHandler();
     const roles = this.reflector.get<UserRole[]>(AllowRoles, handler) ?? [];
     if (!roles.length) return true;
-    const request: RequestWithUser = context.switchToHttp().getRequest();
-    const user = request.user;
+    const request = context.switchToHttp().getRequest();
+    const user = User.parse(request.user);
     const can = roles.includes(user.role);
     if (!can) throw NotAllowPermission();
     return true;

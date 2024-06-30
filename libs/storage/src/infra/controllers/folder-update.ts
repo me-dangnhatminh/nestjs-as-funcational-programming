@@ -1,7 +1,7 @@
 import { Authenticated, useZodPipe } from '@app/auth';
 import { UUID } from '@app/auth/domain';
 import { StorageService } from '@app/storage/application';
-import { FolderInfo } from '@app/storage/domain';
+import { Accessor, FolderInfo } from '@app/storage/domain';
 import { Transactional } from '@nestjs-cls/transactional';
 
 import {
@@ -13,7 +13,6 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { RequestWithUser } from 'express';
 import * as z from 'zod';
 
 const Rename = z.object({ label: z.literal('rename'), name: z.string() });
@@ -76,17 +75,18 @@ export class FolderUpdateUseCase {
   @Patch('folders/:id')
   @Transactional()
   async excute(
-    @Req() req: RequestWithUser,
+    @Req() req,
     @Body(useZodPipe(UpdateDTO)) body: UpdateDTO,
     @Param('id', useZodPipe(UUID)) id: UUID,
   ) {
+    const user = Accessor.parse(req.user);
     const folder = await this.storageService.getFolder(id);
     if (!folder) throw new BadRequestException('Folder not found');
     if (!folder.rootId || !folder.parentId)
       throw new BadRequestException('Folder not found');
-    if (folder.ownerId !== req.user.id)
+    if (folder.ownerId !== user.id)
       throw new BadRequestException('Folder not found');
-    const updated = update(body, folder);
+    const updated = update(body, folder as any);
     await this.storageService.updateFolder(updated);
   }
 }

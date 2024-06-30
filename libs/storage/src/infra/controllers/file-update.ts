@@ -1,7 +1,7 @@
 import { Authenticated, useZodPipe } from '@app/auth';
 import { UUID } from '@app/auth/domain';
 import { StorageService } from '@app/storage/application';
-import { FileRef } from '@app/storage/domain';
+import { Accessor, FileRef } from '@app/storage/domain';
 import { Transactional } from '@nestjs-cls/transactional';
 
 import {
@@ -13,7 +13,6 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { RequestWithUser } from 'express';
 import * as z from 'zod';
 
 const Rename = z.object({ label: z.literal('rename'), name: z.string() });
@@ -75,13 +74,14 @@ export class FileUpdateUseCase {
   @Patch('files/:id')
   @Transactional()
   async excute(
-    @Req() req: RequestWithUser,
+    @Req() req,
     @Body(useZodPipe(UpdateDTO)) body: UpdateDTO,
     @Param('id', useZodPipe(UUID)) id: UUID,
   ) {
+    const user = Accessor.parse(req.user);
     const file = await this.storageService.getFileRef(id);
     if (!file) throw badReq('File not found');
-    if (file.ownerId !== req.user.id) throw badReq('Unauthorized');
+    if (file.ownerId !== user.id) throw badReq('Unauthorized');
     const updated = update(body, file);
     await this.storageService.updateFile(updated);
   }

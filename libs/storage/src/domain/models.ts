@@ -4,7 +4,8 @@ export type UUID = z.infer<typeof UUID>;
 export type Bytes = z.infer<typeof Bytes>;
 export type PastTime = z.infer<typeof PastTime>;
 export type FileRef = z.infer<typeof FileRef>;
-export type Folder = z.infer<typeof Folder>;
+export type Folder = Omit<z.infer<typeof Folder>, 'files' | 'folders'> &
+  Partial<{ files: FileRef[]; folders: Folder[] }>;
 export type FolderInfo = z.infer<typeof FolderInfo>;
 
 export type Owner = z.infer<typeof Owner>;
@@ -80,7 +81,7 @@ const isOwner = <
   resource: R,
   meta: Meta,
 ): PermissionWrapper<Owner, R, Meta> | null => {
-  const isOwner = resource.ownerId === accessor.id;
+  const isOwner = accessor['id'] === resource['ownerId'];
   if (!isOwner) return null;
   return structuredClone({ accessor: Owner.parse(accessor), resource, meta });
 };

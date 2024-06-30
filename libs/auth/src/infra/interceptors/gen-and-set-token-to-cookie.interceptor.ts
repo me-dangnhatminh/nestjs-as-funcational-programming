@@ -4,7 +4,7 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { RequestWithUser, Response } from 'express';
+import { Response } from 'express';
 import { map, Observable } from 'rxjs';
 
 import { toClaim } from '@app/auth/domain';
@@ -21,13 +21,11 @@ export class GenAndSetTokenToCookie implements NestInterceptor {
     return next.handle().pipe(
       map((value: unknown) => {
         const res = context.switchToHttp().getResponse<Response>();
-        const req = context.switchToHttp().getRequest<RequestWithUser>();
+        const req = context.switchToHttp().getRequest();
         const user = req.user;
-
         const claim = toClaim(user);
         const token = this.jwtService.genAT(claim);
         authHelper.setTokenToCookie(res)(token);
-
         return value;
       }),
     );

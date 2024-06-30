@@ -139,7 +139,7 @@ export class StorageRepository implements Domain.IStorageRepository {
         archivedAt: folder.archivedAt,
       }),
     );
-    const inserts = tx.folder.createMany({ data });
+    const inserts = tx.folder.createMany({ data: data as any });
     tasks.push(inserts);
     return Promise.all(tasks).then(() => data);
   }
