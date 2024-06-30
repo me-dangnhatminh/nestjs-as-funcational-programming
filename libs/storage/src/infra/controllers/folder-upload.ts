@@ -67,7 +67,6 @@ export class FolderUploadUseCase {
     }
 
     // =================== Pure function =================== //
-
     const now = new Date();
     const buildFolder = (
       temp: Record<string, FolderTmp>,
@@ -131,9 +130,8 @@ export class FolderUploadUseCase {
       return folder.rgt;
     };
 
-    const preRgt = folder.rgt;
-    calculateLftRgt(folder);
-    const diff = folder.rgt - preRgt;
+    const folderValid = Folder.parse(folder) as Folder;
+    calculateLftRgt(folderValid);
     // =================== Prisma =================== //
     const tx = this.txHost.tx as PrismaClient;
 
@@ -156,6 +154,7 @@ export class FolderUploadUseCase {
 
     // extend root
     const rootId = folder.rootId ?? folder.id;
+    const diff = folderValid.rgt - folder.rgt;
     await tx.folder.update({
       where: {
         id: rootId,
