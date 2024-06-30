@@ -8,14 +8,8 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "program": "${workspaceFolder}\\libs\\storage\\src\\infra\\controllers\\folder-upload.ts",
-      "preLaunchTask": "tsc: build - tsconfig.json",
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ]
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${file}"
     }
   ]
 }

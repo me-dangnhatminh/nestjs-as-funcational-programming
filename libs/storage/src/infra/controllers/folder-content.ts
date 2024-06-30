@@ -1,5 +1,6 @@
 import { Authenticated } from '@app/auth';
 import { UUID } from '@app/auth/domain';
+import { StorageService } from '@app/storage/application';
 import { Accessor } from '@app/storage/domain';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import {
@@ -50,7 +51,10 @@ type FolderContentResult = ReadSide.Folder & {
 @Controller('storage')
 @UseGuards(Authenticated)
 export class FolderContentUseCase {
-  constructor(private readonly txHost: TransactionHost) {}
+  constructor(
+    private readonly service: StorageService,
+    private readonly txHost: TransactionHost,
+  ) {}
 
   @Get(['', 'folders/:id'])
   async excute(

@@ -86,7 +86,7 @@ export class FolderUpdateUseCase {
       throw new BadRequestException('Folder not found');
     if (folder.ownerId !== user.id)
       throw new BadRequestException('Folder not found');
-    const updated = update(body, folder as any);
+    const updated = update(body, folder);
     await this.storageService.updateFolder(updated);
   }
 }

@@ -73,7 +73,7 @@ export class FolderUploadUseCase {
       temp: Record<string, FolderTmp>,
       parent: Folder,
     ): Folder[] => {
-      return Object.entries(temp).map(([folderName, folder]) => {
+      return Object.entries(temp).map(([folderName, folder], index) => {
         const files: FileRef[] = folder.files.map((file) => ({
           id: file.filename,
           name: file.originalname,
@@ -98,31 +98,42 @@ export class FolderUploadUseCase {
           modifiedAt: null,
           pinnedAt: null,
           size: 0,
-          depth: parent.depth + 1,
-          lft: parent.rgt,
-          rgt: parent.rgt + 1,
-          rootId: id,
+          rootId: parent.rootId ?? parent.id,
           parentId: parent.id,
+          depth: 0,
+          lft: 0,
+          rgt: 0,
           files,
         };
         newFolder.folders = buildFolder(folder.folders, newFolder);
-        if (newFolder.folders) {
-          const diff = newFolder.folders.length * 2;
-          newFolder.rgt += diff;
-          newFolder.lft += diff;
-        }
         return newFolder;
       });
     };
 
     const newFolders = buildFolder(foldertmp, folder);
-    const diff = newFolders.length * 2;
-    folder.rgt += diff;
     folder.folders = newFolders;
-    Folder.parse(folder);
 
-    console.log(folder);
+    const calculateLftRgt = (folder: Folder): number => {
+      const children = folder.folders ?? [];
+      if (children.length === 0) return folder.rgt;
 
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        child.depth = folder.depth + 1;
+        child.parentId = folder.id;
+        child.rootId = folder.rootId ?? folder.id;
+
+        child.lft = folder.rgt;
+        child.rgt = folder.rgt + 1;
+        child.rgt = calculateLftRgt(child);
+        folder.rgt = child.rgt + 1;
+      }
+      return folder.rgt;
+    };
+
+    const preRgt = folder.rgt;
+    calculateLftRgt(folder);
+    const diff = folder.rgt - preRgt;
     // =================== Prisma =================== //
     const tx = this.txHost.tx as PrismaClient;
 
@@ -143,15 +154,37 @@ export class FolderUploadUseCase {
       }, []);
     };
 
+    // extend root
+    const rootId = folder.rootId ?? folder.id;
     await tx.folder.update({
-      where: { id: folder.id },
+      where: {
+        id: rootId,
+        rootId: null,
+        parentId: null,
+        lft: 0,
+        depth: 0,
+      },
       data: { rgt: { increment: diff } },
     });
 
+    // extend right siblings
+    const isRoot = folder.rootId === folder.id;
+    if (!isRoot) {
+      await tx.folder.updateMany({
+        where: { rootId, rgt: { gte: folder.rgt } },
+        data: { rgt: { increment: diff } },
+      });
+      await tx.folder.updateMany({
+        where: { rootId, lft: { gt: folder.rgt } },
+        data: { lft: { increment: diff } },
+      });
+    }
+
     const _folders = flatFolder(newFolders);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const persitFolders = _folders.map(({ folders, files, ...f }) => f) as any;
+    const persitFolders = _folders.map(({ folders, files, ...f }) => f);
     await tx.folder.createMany({ data: persitFolders });
+
     const _files = flatFile(newFolders);
     await tx.fileRef.createMany({
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -160,7 +193,6 @@ export class FolderUploadUseCase {
     await tx.fileInFolder.createMany({
       data: _files.map((f) => ({ folderId: f.folderId, fileId: f.id })),
     });
-
     return newFolders;
   }
 

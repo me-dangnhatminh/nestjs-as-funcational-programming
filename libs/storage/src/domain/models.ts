@@ -4,7 +4,7 @@ export type UUID = z.infer<typeof UUID>;
 export type Bytes = z.infer<typeof Bytes>;
 export type PastTime = z.infer<typeof PastTime>;
 export type FileRef = z.infer<typeof FileRef>;
-export type Folder = Omit<z.infer<typeof Folder>, 'files' | 'folders'> &
+export type Folder = z.infer<typeof Folder> &
   Partial<{ files: FileRef[]; folders: Folder[] }>;
 export type FolderInfo = z.infer<typeof FolderInfo>;
 
