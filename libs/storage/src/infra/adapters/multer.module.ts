@@ -67,7 +67,7 @@ class MulterDiskStorage implements IDiskStorage, MulterOptionsFactory {
   }
 }
 
-const DIST_PREFIX = 'uploads';
+const DIST_PREFIX = 'D:/uploads'; // TODO: move to config
 const ROLLBACK_EVENT = 'UPLOAD_FAILED';
 
 const diskStorage: Provider = {

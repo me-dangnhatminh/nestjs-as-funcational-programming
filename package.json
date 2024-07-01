@@ -40,6 +40,7 @@
     "firebase-admin": "^12.1.1",
     "fs-extra": "^11.2.0",
     "joi": "17.12.3",
+    "jszip": "^3.10.1",
     "multer": "1.4.5-lts.1",
     "nestjs-cls": "^4.3.0",
     "reflect-metadata": "^0.2.0",
