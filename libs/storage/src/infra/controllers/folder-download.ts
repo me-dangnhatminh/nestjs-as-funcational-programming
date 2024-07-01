@@ -33,16 +33,15 @@ export class FolderDownloadUseCase {
     const tx = this.txHost.tx as PrismaClient;
     const folder = await tx.folder.findUnique({ where: { id: folderId } });
     if (!folder) throw new BadRequestException('Folder not found');
-    if (folder.ownerId !== user.id)
-      throw new BadRequestException('Folder not found');
 
     const rootId = folder.rootId ?? folder.id;
     const child = await tx.folder.findMany({
       where: {
         rootId: rootId,
+        archivedAt: null,
         lft: { gte: folder.lft },
         rgt: { lte: folder.rgt },
-        archivedAt: null,
+        AND: { archivedAt: null },
       },
       select: {
         id: true,
@@ -50,12 +49,13 @@ export class FolderDownloadUseCase {
         depth: true,
         parentId: true,
         files: {
+          where: { file: { archivedAt: null } },
           select: {
             file: { select: { id: true, name: true, contentType: true } },
           },
         },
       },
-      orderBy: { depth: 'asc' }, // Required for pathTree
+      orderBy: { depth: 'asc' },
     });
 
     // =========================== Calculate pathTree ===========================

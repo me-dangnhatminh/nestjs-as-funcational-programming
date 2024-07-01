@@ -15,9 +15,11 @@ export abstract class IStorageRepository {
   abstract addFile(item: FileRef, folder: Folder): Promise<void>;
   abstract addFiles(items: FileRef[], folder: Folder): Promise<void>;
   abstract hardRemoveFile(item: FileRef): Promise<void>;
+  abstract updateFile(item: FileRef): Promise<void>;
 
   abstract updateFolder(folder: FolderInfo): Promise<void>;
-  abstract updateFile(item: FileRef): Promise<void>;
+  abstract softRemoveFolder(folder: Folder): Promise<void>;
+  abstract restoreFolder(folder: Folder): Promise<void>;
 
   abstract addFolder(item: FolderInfo, folder: Folder): Promise<Folder>;
   abstract addFolders(items: FolderInfo[], folder: Folder): Promise<Folder[]>;

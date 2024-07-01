@@ -10,6 +10,28 @@ import { createRoot, FileMapper, FolderMapper } from '../mappers';
 export class StorageRepository implements Domain.IStorageRepository {
   constructor(private readonly txHost: TransactionHost) {}
 
+  async restoreFolder(item: Domain.Folder): Promise<void> {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    const archivedAt = null;
+    const rootId = item.rootId;
+    if (!rootId) throw new Error('RootId is required');
+    await tx.folder.updateMany({
+      where: { rootId: rootId, lft: { gte: item.lft }, rgt: { lte: item.rgt } },
+      data: { archivedAt },
+    });
+  }
+
+  async softRemoveFolder(item: Domain.Folder): Promise<void> {
+    const tx = this.txHost.tx as Orm.PrismaClient;
+    const archivedAt = new Date();
+    const rootId = item.rootId;
+    if (!rootId) throw new Error('RootId is required');
+    await tx.folder.updateMany({
+      where: { rootId: rootId, lft: { gte: item.lft }, rgt: { lte: item.rgt } },
+      data: { archivedAt },
+    });
+  }
+
   async updateFile(item: Domain.FileRef): Promise<void> {
     const tx = this.txHost.tx as Orm.PrismaClient;
     await tx.fileRef.update({

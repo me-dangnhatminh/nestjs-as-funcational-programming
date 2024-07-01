@@ -87,7 +87,13 @@ export class FolderUpdateUseCase {
     if (folder.ownerId !== user.id)
       throw new BadRequestException('Folder not found');
     const updated = update(body, folder);
-    await this.storageService.updateFolder(updated);
+
+    // TODO: refactor this
+    if (body.label == 'archive') {
+      await this.storageService.softRemoveFolder(folder);
+    } else if (body.label == 'unarchive') {
+      await this.storageService.restoreFolder(folder);
+    } else await this.storageService.updateFolder(updated);
   }
 }
 export default FolderUpdateUseCase;

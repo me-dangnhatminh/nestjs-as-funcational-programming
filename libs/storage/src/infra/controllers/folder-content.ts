@@ -64,6 +64,7 @@ export class FolderContentUseCase {
     const user = Accessor.parse(req.user);
     const folderId = UUID.parse(id ?? user.id);
     const tx = this.txHost.tx as ReadSide.PrismaClient;
+    if (user.id == folderId) this.service.getMyStorage(user.id); // TODO: remove this line
 
     const parent = await tx.folder.findUnique({
       where: {

@@ -26,6 +26,14 @@ export class StorageService {
     private readonly storageRepo: IStorageRepository,
   ) {}
 
+  softRemoveFolder(folder: Folder) {
+    return this.storageRepo.softRemoveFolder(folder);
+  }
+
+  restoreFolder(folder: Folder) {
+    return this.storageRepo.restoreFolder(folder);
+  }
+
   updateFolder(folder: FolderInfo) {
     return this.storageRepo.updateFolder(folder);
   }
